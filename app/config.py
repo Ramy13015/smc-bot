@@ -1,0 +1,8 @@
+import os
+
+CHANNEL = os.getenv("CHANNEL", "telegram")
+TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
+TG_CHAT_ID = os.getenv("TG_CHAT_ID")
+
+HOST = "0.0.0.0"
+PORT = int(os.getenv("PORT", "8000"))
