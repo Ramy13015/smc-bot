@@ -1,15 +1,14 @@
 # Fichier: app/main.py
 
 from fastapi import FastAPI, Request, HTTPException
-# CORRECTION 1: Importation relative correcte
-from app.notifier import notify 
+from app.notifier import notify
 from app.smc import evaluate_smc
-# Importation du chat ID pour l'appel à notify
 from app.config import TELEGRAM_CHAT_ID 
 
-app = FastAPI(title="SMC Bot Alerts")
+# AJUSTEMENT ICI : Ajout de openapi_url=None pour simplifier le routage
+app = FastAPI(title="SMC Bot Alerts", openapi_url=None) # <--- MODIFIEZ CETTE LIGNE
 
-# --- ROUTES DE TEST ---
+# --- ROUTES DE TEST ET HEALTH CHECK ---
 @app.get("/")
 def root():
     return {"status": "running", "info": "SMC bot is online"}
@@ -21,6 +20,7 @@ def health():
 # --- ROUTE WEBHOOK /tv ---
 @app.post("/tv")
 async def receive_alert(req: Request):
+    # ... (le reste du code reste inchangé) ...
     try:
         data = await req.json()
     except Exception as e:
@@ -52,7 +52,6 @@ async def receive_alert(req: Request):
         
         msg = "\n".join(msg_lines)
         
-        # CORRECTION 2: Appel de la fonction notify avec le chat_ID
         await notify(msg, TELEGRAM_CHAT_ID) 
     
     return {
