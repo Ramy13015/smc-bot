@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 from notifier import notify
 from smc import evaluate_smc
-
 app = FastAPI(title="SMC Bot Alerts")
 
 # --- ROUTES DE TEST ---
