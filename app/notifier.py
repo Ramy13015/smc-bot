@@ -1,14 +1,12 @@
 # Fichier: app/notifier.py
 
 import httpx
-# CORRECTION ESSENTIELLE : Importation correcte du package
-from app.config import TELEGRAM_BOT_TOKEN 
+from app.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID 
+# Note : Vous pouvez supprimer l'import de TELEGRAM_CHAT_ID si vous ne l'utilisez pas ici.
 
-async def notify(message: str, chat_id: str):
-    """
-    Envoie une notification formatée via l'API Telegram.
-    """
-    
+# CORRECTION : La fonction doit accepter chat_id
+async def notify(message: str, chat_id: str): 
+
     if not TELEGRAM_BOT_TOKEN:
         print("Erreur: TELEGRAM_BOT_TOKEN n'est pas configuré.")
         return {"error": "Token Telegram manquant", "sent": False}
@@ -16,7 +14,7 @@ async def notify(message: str, chat_id: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     
     data = {
-        "chat_id": chat_id,
+        "chat_id": chat_id, # Utilisation de l'argument passé
         "text": message,
         "parse_mode": "Markdown", 
         "disable_notification": False 
@@ -26,7 +24,6 @@ async def notify(message: str, chat_id: str):
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data=data, timeout=5)
             response.raise_for_status() 
-            
             print(f"Notification Telegram envoyée. Statut: {response.status_code}")
             return response.json()
             
