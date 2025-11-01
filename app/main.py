@@ -1,14 +1,19 @@
 from fastapi import FastAPI, Request, HTTPException
-
 from app.notifier import notify
 from app.smc import evaluate_smc
 
 app = FastAPI(title="SMC Bot Alerts")
 
+# --- ROUTES DE TEST ---
+@app.get("/")
+def root():
+    return {"status": "running", "info": "SMC bot is online"}
+
 @app.get("/health")
-async def health():
+def health():
     return {"ok": True}
 
+# --- ROUTE WEBHOOK /tv ---
 @app.post("/tv")
 async def receive_alert(req: Request):
     try:
