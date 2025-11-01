@@ -1,9 +1,8 @@
 import httpx
 from app.config import TG_BOT_TOKEN, TG_CHAT_ID
 
-
 async def notify(msg: str) -> None:
-    # si pas de token ou pas d'id, on ne fait rien
+    # si pas de token ou pas de chat, on ne fait rien
     if not TG_BOT_TOKEN or not TG_CHAT_ID:
         return
 
