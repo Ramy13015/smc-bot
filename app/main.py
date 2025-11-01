@@ -5,11 +5,9 @@ from app.smc import evaluate_smc
 
 app = FastAPI(title="SMC Bot Alerts")
 
-
 @app.get("/health")
 async def health():
     return {"ok": True}
-
 
 @app.post("/tv")
 async def receive_alert(req: Request):
@@ -18,23 +16,31 @@ async def receive_alert(req: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"invalid json: {e}")
 
-    symbol = data.get("symbol", "Unknown")
+    symbol = data.get("symbol", "unknown")
     event = data.get("event", "unknown")
     side = data.get("side", "none")
+    price = data.get("price", None)
+    timeframe = data.get("timeframe", None)
 
     # scoring SMC
     smc_result = evaluate_smc(data)
 
-    # message telegram
     if smc_result["send"]:
-        msg = (
-            "🔔 monbotfibo\n"
-            f"Pair: {symbol}\n"
-            f"Event: {event}\n"
-            f"Side: {side.upper()}\n"
-            f"Score: {smc_result['score']}/{smc_result['max']}\n"
-            f"Reasons: {', '.join(smc_result['reasons']) or '—'}"
-        )
+        msg_lines = [
+            "📈 monbotfibo",
+            f"Pair: {symbol}",
+            f"Event: {event}",
+            f"Side: {side.upper()}",
+            f"Score: {smc_result['score']}/{smc_result['max']}",
+        ]
+        if price:
+            msg_lines.append(f"Price: {price}")
+        if timeframe:
+            msg_lines.append(f"TF: {timeframe}")
+        if smc_result["reasons"]:
+            msg_lines.append("Confluences: " + ", ".join(smc_result["reasons"]))
+
+        msg = "\n".join(msg_lines)
         await notify(msg)
 
     return {
