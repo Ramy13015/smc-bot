@@ -1,16 +1,18 @@
 # Fichier: app/main.py
 
 from fastapi import FastAPI, Request, HTTPException
-from app.notifier import notify # Assurez-vous que l'importation est correcte
-from app.smc import evaluate_smc # Assurez-vous que l'importation est correcte
-from app.config import TELEGRAM_CHAT_ID # Importation d'une variable d'environnement
+# CORRECTION 1: Utilisez l'importation complète du module
+from app.notifier import notify
+from app.smc import evaluate_smc
+# CORRECTION 2: Importez les variables de configuration (nécessaires pour notify)
+from app.config import TELEGRAM_CHAT_ID
 
 app = FastAPI(title="SMC Bot Alerts")
 
 # --- ROUTES DE TEST ET HEALTH CHECK ---
-# Endpoint pour vérifier si le service est bien démarré à l'adresse racine
 @app.get("/")
 def root():
+    # C'est la bonne route pour vérifier le statut du service
     return {"status": "running", "info": "SMC bot is online"}
 
 @app.get("/health")
@@ -23,7 +25,6 @@ async def receive_alert(req: Request):
     try:
         data = await req.json()
     except Exception as e:
-        # Envoie une erreur 400 si le corps n'est pas un JSON valide
         raise HTTPException(status_code=400, detail=f"Invalid JSON format: {e}")
     
     symbol = data.get("symbol", "unknown")
@@ -52,7 +53,7 @@ async def receive_alert(req: Request):
             
         msg = "\n".join(msg_lines)
         
-        # Envoi de la notification
+        # CORRECTION 3: Utilisez la variable TELEGRAM_CHAT_ID importée
         await notify(msg, TELEGRAM_CHAT_ID)
     
     return {
