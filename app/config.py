@@ -1,12 +1,9 @@
+# Fichier: app/config.py
+
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# Récupère les variables d'environnement de Render
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-CHANNEL = os.getenv("CHANNEL", "telegram")
-
-TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN", "")
-TG_CHAT_ID = os.getenv("TG_CHAT_ID", "")
-
-HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", "10000"))
+# Ligne FAST = uvicorn.run(...) DÉFINITIVEMENT SUPPRIMÉE
