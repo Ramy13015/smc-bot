@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
-from app.notifier import notify
-from app.smc import evaluate_smc
+from notifier import notify
+from smc import evaluate_smc
 
 app = FastAPI(title="SMC Bot Alerts")
 
@@ -20,16 +20,16 @@ async def receive_alert(req: Request):
         data = await req.json()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"invalid json: {e}")
-
+    
     symbol = data.get("symbol", "unknown")
     event = data.get("event", "unknown")
     side = data.get("side", "none")
     price = data.get("price", None)
     timeframe = data.get("timeframe", None)
-
+    
     # scoring SMC
     smc_result = evaluate_smc(data)
-
+    
     if smc_result["send"]:
         msg_lines = [
             "📈 monbotfibo",
@@ -44,10 +44,10 @@ async def receive_alert(req: Request):
             msg_lines.append(f"TF: {timeframe}")
         if smc_result["reasons"]:
             msg_lines.append("Confluences: " + ", ".join(smc_result["reasons"]))
-
+        
         msg = "\n".join(msg_lines)
         await notify(msg)
-
+    
     return {
         "ok": True,
         "received": data,
