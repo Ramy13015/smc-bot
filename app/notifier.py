@@ -1,5 +1,5 @@
 import httpx
-from config import TG_BOT_TOKEN, TG_CHAT_ID
+from app.config import TELEGRAM_BOT_TOKEN, TG_CHAT_ID
 
 async def notify(msg: str) -> None:
     # si pas de token ou pas de chat, on ne fait rien
