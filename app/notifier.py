@@ -1,7 +1,7 @@
 """
-Telegram notification functions using httpx
+Telegram notification functions using requests
 """
-import httpx
+import requests
 import logging
 from typing import List, Optional
 
@@ -91,15 +91,14 @@ def send_telegram_message(
     
     for attempt in range(max_retries + 1):
         try:
-            with httpx.Client(timeout=10.0) as client:
-                response = client.post(url, json=payload)
+            response = requests.post(url, json=payload, timeout=10.0)
+            
+            if response.status_code == 200:
+                logger.info("Telegram message sent successfully")
+                return True
+            else:
+                logger.warning(f"Telegram API error: {response.status_code} - {response.text}")
                 
-                if response.status_code == 200:
-                    logger.info("Telegram message sent successfully")
-                    return True
-                else:
-                    logger.warning(f"Telegram API error: {response.status_code} - {response.text}")
-                    
         except Exception as e:
             logger.error(f"Telegram send attempt {attempt + 1} failed: {e}")
             
