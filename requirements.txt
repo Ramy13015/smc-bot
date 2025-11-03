@@ -1,0 +1,43 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.2
+python-dotenv==1.0.0
+httpx==0.25.2
+
+# Cryptography for hashing
+cryptography==41.0.8
+
+# JSON handling
+orjson==3.9.10
+
+# Logging
+structlog==23.2.0
+
+# Type hints
+typing-extensions==4.8.0
+
+# Optional: Database support (uncomment if needed)
+# sqlalchemy==2.0.23
+# alembic==1.13.1
+# asyncpg==0.29.0  # PostgreSQL
+# aiomysql==0.2.0  # MySQL
+
+# Optional: Redis for caching (uncomment if needed)
+# redis[hiredis]==5.0.1
+# aioredis==2.0.1
+
+# Optional: Testing dependencies (uncomment for development)
+# pytest==7.4.3
+# pytest-asyncio==0.21.1
+# httpx==0.25.2  # for testing FastAPI
+# pytest-cov==4.1.0
+
+# Optional: Code quality tools (uncomment for development)
+# black==23.11.0
+# isort==5.12.0
+# flake8==6.1.0
+# mypy==1.7.1
+
+# Development dependencies
+# pre-commit==3.6.0
+# bandit==1.7.5
