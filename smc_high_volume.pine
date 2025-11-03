@@ -2,11 +2,8 @@
 indicator("SMC Detector - HIGH VOLUME MARKETS", shorttitle="SMC-HV", overlay=true)
 
 // === CONFIGURATION HIGH VOLUME ===
-symbol_select = input.string("BTCUSDT.P", "High Volume Symbol", options=[
-    "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "XAUUSD",
-    "BTCUSDT.P", "ETHUSDT.P", "SOLUSDT.P", "ADAUSDT.P", "DOGEUSDT.P", "XRPUSDT.P"
-])
-htf_tf = input.timeframe("60", "Higher Timeframe")
+symbol_select = input.string("BTCUSDT.P", "High Volume Symbol", options=["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "XAUUSD", "BTCUSDT.P", "ETHUSDT.P", "SOLUSDT.P", "ADAUSDT.P", "DOGEUSDT.P", "XRPUSDT.P"])
+htf_tf = input.timeframe("15", "Timeframe", options=["15", "60"])
 webhook_url = input.string("https://smc-gal.onrender.com/tv", "Webhook URL")
 
 // Volume filter for high-activity markets only
@@ -37,7 +34,7 @@ atr_value = ta.atr(atr_length)
 vol_weighted_atr = atr_value * (volume / volume_sma)
 
 // POI (Point of Interest) detection - Enhanced for high volume
-rsi_value = ta.rsi(14)
+rsi_value = ta.rsi(close, 14)
 poi_valid = (ta.crossover(rsi_value, 30) or ta.crossunder(rsi_value, 70)) and high_volume
 
 // FVG (Fair Value Gap) detection - More strict for perpetuals
@@ -70,8 +67,7 @@ imbalance_filled = math.abs(close - open) > atr_value * imbalance_threshold
 
 // Trend alignment - Multiple timeframes
 ema_200 = ta.ema(close, 200)
-trend_aligned = (close > ema_fast and ema_fast > ema_slow and ema_slow > ema_200) or 
-                (close < ema_fast and ema_fast < ema_slow and ema_slow < ema_200)
+trend_aligned = (close > ema_fast and ema_fast > ema_slow and ema_slow > ema_200) or (close < ema_fast and ema_fast < ema_slow and ema_slow < ema_200)
 
 volume_confirm = volume > ta.sma(volume, 20) * 1.3
 
@@ -96,25 +92,11 @@ if (long_condition or short_condition) and high_volume
     // Use volume-weighted ATR for crypto perpetuals
     final_atr = asset_type == "crypto" ? vol_weighted_atr : atr_value
     
-    payload = '{"event_id":"' + event_id + 
-              '","symbol":"' + symbol_select + 
-              '","timeframe":"1h","direction":"' + direction + 
-              '","price_ctx":{"entry":' + str.tostring(close) + 
-              ',"ref_high":' + str.tostring(high) + 
-              ',"ref_low":' + str.tostring(low) + 
-              '},"atr":' + str.tostring(final_atr) + 
-              ',"asset_type":"' + asset_type + 
-              '","volume_ratio":' + str.tostring(volume/volume_sma) +
-              ',"flags":{"poi_valid":' + str.tostring(poi_valid) + 
-              ',"fvg_open":' + str.tostring(fvg_open) + 
-              ',"ob_valid":' + str.tostring(ob_valid) + 
-              ',"bos_confirm":' + str.tostring(bos_confirm) + 
-              ',"choch_confirm":' + str.tostring(choch_confirm) + 
-              ',"liq_swept":' + str.tostring(liq_swept) + 
-              ',"imbalance_filled":' + str.tostring(imbalance_filled) + 
-              ',"trend_aligned":' + str.tostring(trend_aligned) + 
-              ',"volume_confirm":' + str.tostring(volume_confirm) + 
-              ',"time_filter":' + str.tostring(time_filter) + '}}'
+    // Dynamic timeframe in payload
+    tf_display = htf_tf == "15" ? "15min" : "1h"
+    
+    // Simplified payload construction
+    payload = '{"event_id":"' + event_id + '","symbol":"' + symbol_select + '","timeframe":"' + tf_display + '","direction":"' + direction + '","price_ctx":{"entry":' + str.tostring(close) + ',"ref_high":' + str.tostring(high) + ',"ref_low":' + str.tostring(low) + '},"atr":' + str.tostring(final_atr) + ',"asset_type":"' + asset_type + '","flags":{"poi_valid":' + str.tostring(poi_valid) + ',"fvg_open":' + str.tostring(fvg_open) + ',"ob_valid":' + str.tostring(ob_valid) + ',"bos_confirm":' + str.tostring(bos_confirm) + ',"choch_confirm":' + str.tostring(choch_confirm) + ',"liq_swept":' + str.tostring(liq_swept) + ',"imbalance_filled":' + str.tostring(imbalance_filled) + ',"trend_aligned":' + str.tostring(trend_aligned) + ',"volume_confirm":' + str.tostring(volume_confirm) + ',"time_filter":' + str.tostring(time_filter) + '}}'
     
     alert(payload, alert.freq_once_per_bar)
 
@@ -134,9 +116,7 @@ var label info_label = na
 label.delete(info_label)
 volume_status = high_volume ? "HIGH VOL" : "LOW VOL"
 label_color = high_volume ? color.green : color.red
-info_label := label.new(bar_index, high * 1.01, 
-    symbol_select + " (" + asset_type + ") - " + volume_status, 
-    style=label.style_label_left, color=label_color, textcolor=color.white, size=size.normal)
+info_label := label.new(bar_index, high * 1.01, symbol_select + " (" + asset_type + ") - " + volume_status, style=label.style_label_left, color=label_color, textcolor=color.white, size=size.normal)
 
 // ATR and Volume info
 var table info_table = table.new(position.top_right, 2, 4, bgcolor=color.white, border_width=1)
@@ -146,8 +126,8 @@ if barstate.islast
     table.cell(info_table, 0, 1, "Asset Type", text_color=color.black, text_size=size.small)
     table.cell(info_table, 1, 1, asset_type, text_color=color.blue, text_size=size.small)
     table.cell(info_table, 0, 2, "Volume Ratio", text_color=color.black, text_size=size.small)
-    table.cell(info_table, 1, 2, str.tostring(math.round(volume/volume_sma, 2)), 
-               text_color=high_volume ? color.green : color.red, text_size=size.small)
+    vol_ratio_color = high_volume ? color.green : color.red
+    table.cell(info_table, 1, 2, str.tostring(math.round(volume/volume_sma, 2)), text_color=vol_ratio_color, text_size=size.small)
     table.cell(info_table, 0, 3, "ATR", text_color=color.black, text_size=size.small)
-    table.cell(info_table, 1, 3, str.tostring(math.round(atr_value, asset_type == "forex" ? 5 : 2)), 
-               text_color=color.purple, text_size=size.small)
+    atr_precision = asset_type == "forex" ? 5 : 2
+    table.cell(info_table, 1, 3, str.tostring(math.round(atr_value, atr_precision)), text_color=color.purple, text_size=size.small)
