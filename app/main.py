@@ -29,10 +29,29 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI
 app = FastAPI(
-    title="SMC Trading Bot",
-    version="1.0.0",
-    description="Smart Money Concepts Trading Bot with TradingView Integration"
+    title="SMC Trading Bot - HIGH VOLUME MARKETS",
+    version="2.0.0",
+    description="SMC Bot for High Volume FOREX & CRYPTO PERPETUALS"
 )
+
+# Supported symbols - HIGH VOLUME/LIQUIDITY ONLY
+SUPPORTED_SYMBOLS = {
+    # FOREX - Major pairs + Gold (high volume)
+    "EURUSD": "forex",
+    "GBPUSD": "forex", 
+    "USDJPY": "forex",
+    "AUDUSD": "forex",
+    "USDCAD": "forex",
+    "XAUUSD": "gold",
+    
+    # CRYPTO PERPETUALS - Top volume/volatility
+    "BTCUSDT.P": "crypto",
+    "ETHUSDT.P": "crypto",
+    "SOLUSDT.P": "crypto",
+    "ADAUSDT.P": "crypto",
+    "DOGEUSDT.P": "crypto",
+    "XRPUSDT.P": "crypto"
+}
 
 
 @app.get("/")
@@ -40,9 +59,15 @@ async def root():
     """Root endpoint"""
     return {
         "status": "running",
-        "bot": "SMC Trading Bot",
-        "version": "1.0.0",
-        "description": "Smart Money Concepts Trading Bot"
+        "bot": "SMC Trading Bot - HIGH VOLUME MARKETS",
+        "version": "2.0.0",
+        "focus": "High volume FOREX & CRYPTO PERPETUALS",
+        "supported_symbols": list(SUPPORTED_SYMBOLS.keys()),
+        "market_types": {
+            "forex": [k for k, v in SUPPORTED_SYMBOLS.items() if v == "forex"],
+            "crypto_perpetuals": [k for k, v in SUPPORTED_SYMBOLS.items() if v == "crypto"],
+            "gold": [k for k, v in SUPPORTED_SYMBOLS.items() if v == "gold"]
+        }
     }
 
 
@@ -52,10 +77,16 @@ async def health():
     return {
         "ok": True,
         "timestamp": datetime.now().isoformat(),
+        "supported_markets": {
+            "forex_majors": ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD"],
+            "crypto_perpetuals": ["BTCUSDT.P", "ETHUSDT.P", "SOLUSDT.P", "ADAUSDT.P", "DOGEUSDT.P", "XRPUSDT.P"],
+            "precious_metals": ["XAUUSD"]
+        },
         "config": {
             "telegram_configured": bool(Config.TELEGRAM_TOKEN and Config.TELEGRAM_CHAT_ID),
             "confluence_threshold": Config.CONFLUENCE_THRESH,
-            "risk_pct": Config.RISK_PCT
+            "risk_pct": Config.RISK_PCT,
+            "focus": "HIGH VOLUME MARKETS ONLY"
         },
         "cache_size": get_cache_size()
     }

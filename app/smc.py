@@ -22,6 +22,51 @@ WEIGHTS = {
 # Critical flags that must be present
 CRITICAL_FLAGS = ["poi_valid", "fvg_open"]
 
+# Asset-specific configuration - HIGH VOLUME MARKETS
+ASSET_CONFIG = {
+    "forex": {
+        "base_equity": 5000,
+        "atr_multiplier": 1.0,
+        "sl_mult": 1.5,
+        "tp_mult": 2.0
+    },
+    "crypto": {
+        "base_equity": 15000,     # Plus d'equity pour les perpétuels
+        "atr_multiplier": 2.0,    # ATR x2 pour la volatilité crypto
+        "sl_mult": 2.5,           # SL plus large pour les perpétuels
+        "tp_mult": 4.0            # TP plus agressif
+    },
+    "gold": {
+        "base_equity": 8000,      # Plus d'equity pour l'or
+        "atr_multiplier": 1.8,    # ATR adapté à la volatilité de l'or
+        "sl_mult": 2.0,
+        "tp_mult": 3.0
+    }
+}
+
+
+def get_asset_config(symbol: str, asset_type: str = None) -> dict:
+    """
+    Get asset-specific configuration based on symbol or asset_type
+    
+    Args:
+        symbol: Trading symbol
+        asset_type: Asset type from payload
+        
+    Returns:
+        Asset configuration dictionary
+    """
+    # Determine asset type from symbol if not provided
+    if not asset_type:
+        if ".P" in symbol or symbol in ["BTCUSDT", "ETHUSDT", "SOLUSDT", "ADAUSDT", "DOGEUSDT", "XRPUSDT"]:
+            asset_type = "crypto"
+        elif symbol in ["XAUUSD", "XAGUSD"]:
+            asset_type = "gold"
+        else:
+            asset_type = "forex"
+    
+    return ASSET_CONFIG.get(asset_type, ASSET_CONFIG["forex"])
+
 
 def calculate_confluence_score(flags: Flags) -> float:
     """
