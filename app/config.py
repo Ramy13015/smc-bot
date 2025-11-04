@@ -15,8 +15,8 @@ class Config:
     # Trading Parameters
     BASE_EQUITY: float = float(os.getenv("BASE_EQUITY", "5000"))
     RISK_PCT: float = float(os.getenv("RISK_PCT", "0.01"))
-    # CONFLUENCE À 60% - SIGNAUX PREMIUM UNIQUEMENT
-    CONFLUENCE_THRESH: float = 0.60  # 60% minimum pour filtrer
+    # CONFLUENCE À 65% - ULTRA PREMIUM UNIQUEMENT (7+ flags)
+    CONFLUENCE_THRESH: float = 0.65  # 65% minimum pour filtrer
     
     # Risk Management
     ATR_SL_MULT: float = float(os.getenv("ATR_SL_MULT", "1.5"))
