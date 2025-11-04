@@ -116,9 +116,9 @@ if (long_condition or short_condition)
 // === 🎨 PROFESSIONAL UI - CLEAN & MINIMAL ===
 
 // 1️⃣ SINGLE ARROW PER SIGNAL (petite taille, pas de texte)
-plotshape(long_condition and high_volume, style=shape.triangleup, location=location.belowbar, 
+plotshape(long_condition, style=shape.triangleup, location=location.belowbar, 
           color=color.new(color.lime, 0), size=size.small, title="LONG")
-plotshape(short_condition and high_volume, style=shape.triangledown, location=location.abovebar, 
+plotshape(short_condition, style=shape.triangledown, location=location.abovebar, 
           color=color.new(color.red, 0), size=size.small, title="SHORT")
 
 // 2️⃣ Pas de boxes - Trop encombrant, on garde juste les flèches
