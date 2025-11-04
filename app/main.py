@@ -1,5 +1,6 @@
 """
 FastAPI main application for SMC Trading Bot
+Version: 2.0.10 - CONFLUENCE 10% TEST
 """
 import logging
 from datetime import datetime
