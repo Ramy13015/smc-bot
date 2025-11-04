@@ -1,25 +1,25 @@
 //@version=5
 indicator("SMC Detector - HIGH VOLUME MARKETS", shorttitle="SMC-HV", overlay=true)
 
-// === CONFIGURATION - 3 ACTIFS PRINCIPAUX ===
-symbol_select = input.string("BTCUSDT.P", "Symbol", options=["BTCUSDT.P", "ETHUSDT.P", "XAUUSD"])
-htf_tf = input.timeframe("5", "Timeframe", options=["1", "5", "15", "60"])
+// === CONFIGURATION - AUTOMATIQUE ===
 webhook_url = input.string("https://smc-gal.onrender.com/tv", "Webhook URL")
 
 // Volume filter for high-activity markets only
 min_volume_mult = input.float(1.5, "Minimum Volume Multiplier", minval=1.0, maxval=5.0)
 
-// === SYMBOL LOGIC - BTC/ETH/GOLD UNIQUEMENT ===
+// === SYMBOL LOGIC - DÉTECTION AUTOMATIQUE DU GRAPHIQUE ===
 get_symbol_data() =>
+    current_symbol = syminfo.tickerid  // Détecte automatiquement le symbole du graphique
     asset_type = "crypto"
-    if str.contains(symbol_select, "BTCUSDT") or str.contains(symbol_select, "ETHUSDT")
+    
+    if str.contains(current_symbol, "BTC") or str.contains(current_symbol, "ETH") or str.contains(current_symbol, "USDT")
         asset_type := "crypto"
-    else if str.contains(symbol_select, "XAU")
+    else if str.contains(current_symbol, "XAU")
         asset_type := "gold"
     
-    [request.security(symbol_select, timeframe.period, close), asset_type]
+    [current_symbol, asset_type]
 
-[current_price, asset_type] = get_symbol_data()
+[symbol_select, asset_type] = get_symbol_data()
 
 // === HIGH VOLUME FILTER ===
 volume_sma = ta.sma(volume, 20)
