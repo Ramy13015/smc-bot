@@ -82,12 +82,12 @@ avoid_hours = is_crypto ? false : (hour >= 22 or hour <= 2)
 time_filter = not avoid_hours and high_volume
 
 // === SIGNAL GENERATION FOR HIGH VOLUME ===
-// STRATÉGIE SMC COMPLÈTE - Conditions strictes mais fiables
-long_signal_strength = (poi_valid or fvg_open) and high_volume
-short_signal_strength = (poi_valid or fvg_open) and high_volume
+// STRATÉGIE SMC ULTRA STRICTE - Minimum 3 critères obligatoires
+long_signal_strength = (poi_valid or fvg_open) and ob_valid and trend_aligned and high_volume
+short_signal_strength = (poi_valid or fvg_open) and ob_valid and trend_aligned and high_volume
 
-long_condition = long_signal_strength and close > ema_fast
-short_condition = short_signal_strength and close < ema_fast
+long_condition = long_signal_strength and close > ema_fast and volume_confirm
+short_condition = short_signal_strength and close < ema_fast and volume_confirm
 
 // === WEBHOOK PAYLOAD - PINE CALCULE TOUT ===
 if (long_condition or short_condition) and high_volume
