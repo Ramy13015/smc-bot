@@ -1,5 +1,5 @@
 //@version=5
-indicator("SMC Detector - QUALITY (76%)", shorttitle="SMC-Q76", overlay=true)
+indicator("SMC Detector - QUALITY (70%)", shorttitle="SMC-Q70", overlay=true)
 
 // === CONFIGURATION - VERSION SOUPLE POUR VOIR DES SIGNAUX ===
 webhook_url = input.string("https://smc-gal.onrender.com/tv", "Webhook URL")
@@ -8,7 +8,7 @@ webhook_url = input.string("https://smc-gal.onrender.com/tv", "Webhook URL")
 min_volume_mult = input.float(0.8, "Minimum Volume Multiplier", minval=0.5, maxval=2.0)
 
 // SEUIL DE CONFLUENCE RÉGLABLE
-confluence_threshold = input.float(76.0, "Confluence Threshold (%)", minval=20.0, maxval=100.0, step=10.0)
+confluence_threshold = input.float(70.0, "Confluence Threshold (%)", minval=20.0, maxval=100.0, step=10.0)
 
 // === SYMBOL LOGIC - DÉTECTION AUTOMATIQUE DU GRAPHIQUE ===
 get_symbol_data() =>
@@ -51,6 +51,44 @@ ob_volume = volume > ta.sma(volume, 20) * ob_volume_threshold
 ema_cross = ta.crossover(close, ta.ema(close, 20)) or ta.crossunder(close, ta.ema(close, 20))
 ob_valid = ob_volume and ema_cross
 
+// === AJOUT : OB MITIGATION - Vérifier que l'OB est traversé ===
+var float ob_high = na
+var float ob_low = na
+var bool ob_mitigated = false
+
+if ob_valid
+    ob_high := high[1]
+    ob_low := low[1]
+    ob_mitigated := (close > ob_high) or (close < ob_low)
+else
+    ob_mitigated := false
+
+// === ANTI-PIÈGE : FILTRES PROFESSIONNELS ===
+// 1. Éviter les FAUX BREAKOUTS (piège des débutants)
+recent_high = ta.highest(high, 20)
+recent_low = ta.lowest(low, 20)
+is_fake_breakout_long = close > recent_high and close < recent_high * 1.005  // Breakout <0.5% = suspect
+is_fake_breakout_short = close < recent_low and close > recent_low * 0.995
+
+// 2. Éviter les ZONES DE LIQUIDATION (piège des market makers)
+// Prix près des niveaux ronds psychologiques (ex: 100k, 3500, etc.)
+price_mod_1000 = close % 1000
+price_mod_100 = close % 100
+near_round_level = (price_mod_1000 < 50 or price_mod_1000 > 950) or (price_mod_100 < 5 or price_mod_100 > 95)
+
+// 3. STOP HUNT DETECTION - Éviter les mèches de liquidation
+wick_size_upper = high - math.max(open, close)
+wick_size_lower = math.min(open, close) - low
+body_size = math.abs(close - open)
+is_stop_hunt = (wick_size_upper > body_size * 2) or (wick_size_lower > body_size * 2)
+
+// 4. RANGE-BOUND MARKET - Éviter de trader en consolidation
+atr_ratio = atr_value / close
+is_low_volatility = atr_ratio < 0.01  // Volatilité <1% = range
+
+// FILTRE COMBINÉ ANTI-PIÈGE
+no_trap = not is_fake_breakout_long and not is_fake_breakout_short and not near_round_level and not is_stop_hunt and not is_low_volatility
+
 // BOS - SIMPLIFIÉ
 swing_length = asset_type == "crypto" ? 5 : 3  // RÉDUIT
 swing_high = ta.pivothigh(high, swing_length, swing_length)
@@ -80,18 +118,24 @@ is_crypto = asset_type == "crypto"
 avoid_hours = is_crypto ? false : (hour >= 23 or hour <= 1)  // RÉDUIT
 time_filter = not avoid_hours  // Sans high_volume requirement
 
-// === SIGNAL GENERATION - VERSION SOUPLE ===
+// === SIGNAL GENERATION - VERSION STRICTE ANTI-FAUX SIGNAUX ===
+// Conditions de base
 long_signal_strength = (poi_valid or fvg_open or ob_valid) and volume_confirm
 short_signal_strength = (poi_valid or fvg_open or ob_valid) and volume_confirm
 
-long_condition = long_signal_strength and close > ema_fast
-short_condition = short_signal_strength and close < ema_fast
+// FILTRE FINAL - Exige OB mitigé + volume + trend aligné + ANTI-PIÈGE
+valid_long = long_signal_strength and close > ema_fast and ob_mitigated and high_volume and trend_aligned and no_trap
+valid_short = short_signal_strength and close < ema_fast and ob_mitigated and high_volume and trend_aligned and no_trap
+
+// Compatibilité avec le reste du code
+long_condition = valid_long
+short_condition = valid_short
 
 // === CALCUL CONFLUENCE SCORE ===
 flag_count = (poi_valid ? 1 : 0) + (fvg_open ? 1 : 0) + (ob_valid ? 1 : 0) + (bos_confirm ? 1 : 0) + (choch_confirm ? 1 : 0) + (liq_swept ? 1 : 0) + (imbalance_filled ? 1 : 0) + (trend_aligned ? 1 : 0) + (volume_confirm ? 1 : 0) + (time_filter ? 1 : 0)
 confluence_score = (flag_count / 10.0) * 100
 
-// SEUIL RÉGLABLE (par défaut 76%)
+// SEUIL RÉGLABLE (par défaut 70%)
 show_signal = confluence_score >= confluence_threshold
 
 // === WEBHOOK PAYLOAD ===
@@ -111,12 +155,12 @@ if (long_condition or short_condition) and show_signal
     alert(payload, alert.freq_once_per_bar)
 
 // === UI ===
-// Labels pour montrer le score de confluence UNIQUEMENT si ≥ 76%
+// Labels pour montrer le score de confluence UNIQUEMENT si ≥ 70%
 label_text = (long_condition or short_condition) and show_signal ? str.tostring(confluence_score, "#") + "%" : na
 label_color = confluence_score >= 80 ? color.new(color.green, 0) : 
-              color.new(color.orange, 0)  // 76-79% = Orange, 80%+ = Vert
+              color.new(color.orange, 0)  // 70-79% = Orange, 80%+ = Vert
 
-// Afficher score UNIQUEMENT si confluence ≥ 76% (= show_signal)
+// Afficher score UNIQUEMENT si confluence ≥ 70% (= show_signal)
 if (long_condition or short_condition) and show_signal
     label.new(bar_index, high, label_text, 
               style=label.style_label_down, 
@@ -124,7 +168,7 @@ if (long_condition or short_condition) and show_signal
               textcolor=color.white, 
               size=size.small)
 
-// Flèches UNIQUEMENT si confluence ≥ 76%
+// Flèches UNIQUEMENT si confluence ≥ 70%
 direction_emoji = long_condition ? "▲" : "▼"
 plotshape(long_condition and show_signal, style=shape.triangleup, location=location.belowbar, 
           color=color.new(color.lime, 0), size=size.normal, title="LONG", text="L")
