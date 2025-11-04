@@ -122,6 +122,7 @@ async def tradingview_webhook(request: Request):
     # Extract data (Pine Script a TOUT calculé)
     event_id = data.get("event_id")
     symbol = data.get("symbol")
+    timeframe = data.get("timeframe", "Unknown")  # 5, 15, 60, 240, etc.
     direction = data.get("direction")
     entry = data.get("entry")
     sl = data.get("sl")
@@ -132,7 +133,7 @@ async def tradingview_webhook(request: Request):
     ob_valid = data.get("ob_valid", False)
     
     logger.info(
-        f"[{request_id}] PINE SCRIPT DATA: {symbol} {direction} "
+        f"[{request_id}] PINE SCRIPT DATA: {symbol} [{timeframe}] {direction} "
         f"Entry={entry} SL={sl} TP={tp} ATR={atr}"
     )
     
@@ -166,10 +167,11 @@ async def tradingview_webhook(request: Request):
     if ob_valid:
         active_flags.append("OB Valid")
     
-    # Format message (simplifié)
+    # Format message avec timeframe
     direction_emoji = "🟢" if direction == "LONG" else "🔴"
     message = f"""{direction_emoji} **SMC SIGNAL - {direction} {symbol}**
 
+⏱️ **Timeframe:** `{timeframe}`
 💰 **Entry:** `{entry:.5f}`
 🛑 **Stop Loss:** `{sl:.5f}`
 🎯 **Take Profit:** `{tp:.5f}`

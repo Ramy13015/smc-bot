@@ -97,8 +97,11 @@ if (long_condition or short_condition) and high_volume
     stop_loss = direction == "LONG" ? entry_price - (final_atr * 2.5) : entry_price + (final_atr * 2.5)
     take_profit = direction == "LONG" ? entry_price + (final_atr * 4.0) : entry_price - (final_atr * 4.0)
     
-    // JSON COMPLET - Tout est calculé ici
-    payload = '{"event_id":"' + event_id + '","symbol":"' + symbol_select + '","direction":"' + direction + '","entry":' + str.tostring(entry_price) + ',"sl":' + str.tostring(stop_loss) + ',"tp":' + str.tostring(take_profit) + ',"atr":' + str.tostring(final_atr) + ',"poi_valid":' + str.tostring(poi_valid) + ',"fvg_open":' + str.tostring(fvg_open) + ',"ob_valid":' + str.tostring(ob_valid) + '}'
+    // DÉTECTION AUTOMATIQUE DU TIMEFRAME DU GRAPHIQUE
+    current_tf = timeframe.period
+    
+    // JSON COMPLET - Tout est calculé ici avec timeframe
+    payload = '{"event_id":"' + event_id + '","symbol":"' + symbol_select + '","timeframe":"' + current_tf + '","direction":"' + direction + '","entry":' + str.tostring(entry_price) + ',"sl":' + str.tostring(stop_loss) + ',"tp":' + str.tostring(take_profit) + ',"atr":' + str.tostring(final_atr) + ',"poi_valid":' + str.tostring(poi_valid) + ',"fvg_open":' + str.tostring(fvg_open) + ',"ob_valid":' + str.tostring(ob_valid) + '}'
     
     alert(payload, alert.freq_once_per_bar)
 
