@@ -121,7 +121,9 @@ async def tradingview_webhook(request: Request):
     
     # Extract data (Pine Script a TOUT calculé)
     event_id = data.get("event_id")
-    symbol = data.get("symbol")
+    raw_symbol = data.get("symbol")
+    # NETTOYAGE SYMBOLE (backup si Pine Script oublie)
+    symbol = raw_symbol.replace("BYBIT:", "").replace("BINANCE:", "")
     timeframe = data.get("timeframe", "Unknown")  # 5, 15, 60, 240, etc.
     direction = data.get("direction")
     entry = data.get("entry")
