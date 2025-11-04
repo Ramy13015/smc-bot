@@ -9,7 +9,11 @@ min_volume_mult = input.float(1.5, "Minimum Volume Multiplier", minval=1.0, maxv
 
 // === SYMBOL LOGIC - DÉTECTION AUTOMATIQUE DU GRAPHIQUE ===
 get_symbol_data() =>
-    current_symbol = syminfo.tickerid  // Détecte automatiquement le symbole du graphique
+    // Nettoie le ticker pour avoir seulement BTCUSDT.P (sans BYBIT:)
+    raw_symbol = syminfo.tickerid
+    current_symbol = str.replace(raw_symbol, "BYBIT:", "")
+    current_symbol := str.replace(current_symbol, "BINANCE:", "")
+    
     asset_type = "crypto"
     
     if str.contains(current_symbol, "BTC") or str.contains(current_symbol, "ETH") or str.contains(current_symbol, "USDT")
