@@ -1,18 +1,18 @@
 //@version=5
 indicator("SMC Detector - HIGH VOLUME MARKETS", shorttitle="SMC-HV", overlay=true)
 
-// === CONFIGURATION HIGH VOLUME ===
-symbol_select = input.string("BTCUSDT.P", "High Volume Symbol", options=["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "XAUUSD", "BTCUSDT.P", "ETHUSDT.P", "SOLUSDT.P", "ADAUSDT.P", "DOGEUSDT.P", "XRPUSDT.P"])
+// === CONFIGURATION - 3 ACTIFS PRINCIPAUX ===
+symbol_select = input.string("BTCUSDT.P", "Symbol", options=["BTCUSDT.P", "ETHUSDT.P", "XAUUSD"])
 htf_tf = input.timeframe("5", "Timeframe", options=["1", "5", "15", "60"])
 webhook_url = input.string("https://smc-gal.onrender.com/tv", "Webhook URL")
 
 // Volume filter for high-activity markets only
 min_volume_mult = input.float(1.5, "Minimum Volume Multiplier", minval=1.0, maxval=5.0)
 
-// === SYMBOL LOGIC ===
+// === SYMBOL LOGIC - BTC/ETH/GOLD UNIQUEMENT ===
 get_symbol_data() =>
-    asset_type = "forex"
-    if str.contains(symbol_select, ".P") or str.contains(symbol_select, "USDT")
+    asset_type = "crypto"
+    if str.contains(symbol_select, "BTCUSDT") or str.contains(symbol_select, "ETHUSDT")
         asset_type := "crypto"
     else if str.contains(symbol_select, "XAU")
         asset_type := "gold"
