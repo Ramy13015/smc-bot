@@ -84,6 +84,9 @@ def calculate_confluence_score(flags: Flags) -> float:
         if hasattr(flags, flag_name) and getattr(flags, flag_name):
             total_score += weight
     
+    # DEBUG LOG
+    print(f"🔍 DEBUG CONFLUENCE: Score={total_score:.2f} ({total_score*100:.1f}%)")
+    
     return total_score
 
 
@@ -104,8 +107,10 @@ def validate_critical_flags(flags: Flags) -> Tuple[bool, str]:
             missing_flags.append(critical_flag)
     
     if missing_flags:
+        print(f"❌ CRITICAL FLAGS MISSING: {', '.join(missing_flags)}")
         return False, f"Missing critical flags: {', '.join(missing_flags)}"
     
+    print(f"✅ CRITICAL FLAGS OK: {', '.join(CRITICAL_FLAGS)}")
     return True, "All critical flags present"
 
 
@@ -145,6 +150,9 @@ def calculate_risk_parameters(
     risk_amount = base_equity * risk_pct
     price_distance = abs(entry - stop_loss)
     position_size = risk_amount / price_distance if price_distance > 0 else 0
+    
+    # DEBUG LOG
+    print(f"💰 TRADE PARAMS: Entry={entry}, SL={stop_loss}, TP={take_profit}, Size={position_size:.4f}")
     
     return entry, stop_loss, take_profit, position_size
 

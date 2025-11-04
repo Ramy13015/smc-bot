@@ -15,7 +15,7 @@ class Config:
     # Trading Parameters
     BASE_EQUITY: float = float(os.getenv("BASE_EQUITY", "5000"))
     RISK_PCT: float = float(os.getenv("RISK_PCT", "0.01"))
-    CONFLUENCE_THRESH: float = float(os.getenv("CONFLUENCE_THRESH", "0.20"))  # Test: 20% pour vérifier si signaux arrivent
+    CONFLUENCE_THRESH: float = float(os.getenv("CONFLUENCE_THRESH", "0.10"))  # TEST EXTRÊME: 10% - signaux ULTRA faciles
     
     # Risk Management
     ATR_SL_MULT: float = float(os.getenv("ATR_SL_MULT", "1.5"))
