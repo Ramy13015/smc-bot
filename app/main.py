@@ -128,14 +128,44 @@ async def tradingview_webhook(request: Request):
     sl = data.get("sl")
     tp = data.get("tp")
     atr = data.get("atr")
+    
+    # Extract ALL flags for confluence calculation
     poi_valid = data.get("poi_valid", False)
     fvg_open = data.get("fvg_open", False)
     ob_valid = data.get("ob_valid", False)
+    bos_confirm = data.get("bos_confirm", False)
+    choch_confirm = data.get("choch_confirm", False)
+    liq_swept = data.get("liq_swept", False)
+    imbalance_filled = data.get("imbalance_filled", False)
+    trend_aligned = data.get("trend_aligned", False)
+    volume_confirm = data.get("volume_confirm", False)
+    time_filter = data.get("time_filter", False)
     
     logger.info(
         f"[{request_id}] PINE SCRIPT DATA: {symbol} [{timeframe}] {direction} "
         f"Entry={entry} SL={sl} TP={tp} ATR={atr}"
     )
+    
+    # Calculate confluence score FIRST (before duplicate check)
+    flag_count = sum([poi_valid, fvg_open, ob_valid, bos_confirm, choch_confirm, 
+                      liq_swept, imbalance_filled, trend_aligned, volume_confirm, time_filter])
+    confluence_score = (flag_count / 10.0) * 100
+    
+    logger.info(f"[{request_id}] Confluence: {confluence_score:.1f}% (threshold: {Config.CONFLUENCE_THRESH*100:.0f}%)")
+    
+    # Check confluence threshold
+    if confluence_score < (Config.CONFLUENCE_THRESH * 100):
+        logger.info(f"[{request_id}] Below threshold - Signal rejected")
+        return JSONResponse(
+            status_code=202,
+            content={
+                "ok": True,
+                "sent": False,
+                "reason": "below_threshold",
+                "confluence": confluence_score,
+                "event_id": event_id
+            }
+        )
     
     # Check for duplicates
     if is_duplicate(event_id, Config.ANTI_SPAM_TTL):
@@ -158,7 +188,7 @@ async def tradingview_webhook(request: Request):
     price_distance = abs(entry - sl)
     position_size = risk_amount / price_distance if price_distance > 0 else 0
     
-    # Build active flags list with all details
+    # Build active flags list with ALL SMC indicators
     active_flags = []
     if poi_valid:
         active_flags.append("✅ Poi Valid")
@@ -166,10 +196,20 @@ async def tradingview_webhook(request: Request):
         active_flags.append("✅ Fvg Open")
     if ob_valid:
         active_flags.append("✅ Ob Valid")
-    
-    # Calculate confluence score (simple count of active flags)
-    flag_count = sum([poi_valid, fvg_open, ob_valid])
-    confluence_score = (flag_count / 3.0) * 100  # 3 flags tracked
+    if bos_confirm:
+        active_flags.append("✅ Bos Confirm")
+    if choch_confirm:
+        active_flags.append("✅ Choch Confirm")
+    if liq_swept:
+        active_flags.append("✅ Liq Swept")
+    if imbalance_filled:
+        active_flags.append("✅ Imbalance Filled")
+    if trend_aligned:
+        active_flags.append("✅ Trend Aligned")
+    if volume_confirm:
+        active_flags.append("✅ Volume Confirm")
+    if time_filter:
+        active_flags.append("✅ Time Filter")
     
     # Format timeframe display
     tf_display = timeframe

@@ -103,8 +103,8 @@ if (long_condition or short_condition) and high_volume
     // DÉTECTION AUTOMATIQUE DU TIMEFRAME DU GRAPHIQUE
     current_tf = timeframe.period
     
-    // JSON COMPLET - Tout est calculé ici avec timeframe
-    payload = '{"event_id":"' + event_id + '","symbol":"' + symbol_select + '","timeframe":"' + current_tf + '","direction":"' + direction + '","entry":' + str.tostring(entry_price) + ',"sl":' + str.tostring(stop_loss) + ',"tp":' + str.tostring(take_profit) + ',"atr":' + str.tostring(final_atr) + ',"poi_valid":' + str.tostring(poi_valid) + ',"fvg_open":' + str.tostring(fvg_open) + ',"ob_valid":' + str.tostring(ob_valid) + '}'
+    // JSON COMPLET - Tout est calculé ici avec timeframe ET TOUS LES FLAGS
+    payload = '{"event_id":"' + event_id + '","symbol":"' + symbol_select + '","timeframe":"' + current_tf + '","direction":"' + direction + '","entry":' + str.tostring(entry_price) + ',"sl":' + str.tostring(stop_loss) + ',"tp":' + str.tostring(take_profit) + ',"atr":' + str.tostring(final_atr) + ',"poi_valid":' + str.tostring(poi_valid) + ',"fvg_open":' + str.tostring(fvg_open) + ',"ob_valid":' + str.tostring(ob_valid) + ',"bos_confirm":' + str.tostring(bos_confirm) + ',"choch_confirm":' + str.tostring(choch_confirm) + ',"liq_swept":' + str.tostring(liq_swept) + ',"imbalance_filled":' + str.tostring(imbalance_filled) + ',"trend_aligned":' + str.tostring(trend_aligned) + ',"volume_confirm":' + str.tostring(volume_confirm) + ',"time_filter":' + str.tostring(time_filter) + '}'
     
     alert(payload, alert.freq_once_per_bar)
 
