@@ -20,7 +20,7 @@ WEIGHTS = {
 }
 
 # Critical flags that must be present
-CRITICAL_FLAGS = ["poi_valid", "fvg_open"]
+CRITICAL_FLAGS = []  # TEST: Disabled critical flags requirement for testing
 
 # Asset-specific configuration - HIGH VOLUME MARKETS
 ASSET_CONFIG = {
