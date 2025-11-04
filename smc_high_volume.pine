@@ -78,11 +78,12 @@ avoid_hours = is_crypto ? false : (hour >= 22 or hour <= 2)
 time_filter = not avoid_hours and high_volume
 
 // === SIGNAL GENERATION FOR HIGH VOLUME ===
-// TEST MODE: Relaxed conditions to verify connection
-// Original: poi_valid and fvg_open and trend_aligned and volume_confirm
-long_signal_strength = (poi_valid or fvg_open) and high_volume  // Just need ONE of POI or FVG
-short_signal_strength = (poi_valid or fvg_open) and high_volume
+// ULTRA RELAXED MODE: Maximum signals for testing
+// Just need POI OR FVG, no other conditions
+long_signal_strength = (poi_valid or fvg_open)  // Removed high_volume requirement
+short_signal_strength = (poi_valid or fvg_open)  // Removed high_volume requirement
 
+// SIMPLE CONDITIONS: Just POI or FVG, ignore EMA trend
 long_condition = long_signal_strength and close > ema_fast
 short_condition = short_signal_strength and close < ema_fast
 
