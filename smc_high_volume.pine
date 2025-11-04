@@ -82,15 +82,16 @@ avoid_hours = is_crypto ? false : (hour >= 22 or hour <= 2)
 time_filter = not avoid_hours and high_volume
 
 // === SIGNAL GENERATION FOR HIGH VOLUME ===
-// STRATÉGIE SMC ULTRA STRICTE - Minimum 3 critères obligatoires
-long_signal_strength = (poi_valid or fvg_open) and ob_valid and trend_aligned and high_volume
-short_signal_strength = (poi_valid or fvg_open) and ob_valid and trend_aligned and high_volume
+// STRATÉGIE SMC ELITE - Conditions MAXIMALES pour éviter spam
+// Besoin de MINIMUM 6 critères simultanés pour déclencher un signal
+long_signal_strength = (poi_valid or fvg_open) and ob_valid and trend_aligned and bos_confirm and volume_confirm and time_filter
+short_signal_strength = (poi_valid or fvg_open) and ob_valid and trend_aligned and bos_confirm and volume_confirm and time_filter
 
-long_condition = long_signal_strength and close > ema_fast and volume_confirm
-short_condition = short_signal_strength and close < ema_fast and volume_confirm
+long_condition = long_signal_strength and close > ema_fast and high_volume
+short_condition = short_signal_strength and close < ema_fast and high_volume
 
 // === WEBHOOK PAYLOAD - PINE CALCULE TOUT ===
-if (long_condition or short_condition) and high_volume
+if (long_condition or short_condition)
     direction = long_condition ? "LONG" : "SHORT"
     
     // EVENT ID UNIQUE PAR BOUGIE (évite doublons)
