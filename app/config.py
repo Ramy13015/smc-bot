@@ -3,6 +3,10 @@ Configuration management using environment variables
 """
 import os
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class Config:
@@ -15,8 +19,8 @@ class Config:
     # Trading Parameters
     BASE_EQUITY: float = float(os.getenv("BASE_EQUITY", "5000"))
     RISK_PCT: float = float(os.getenv("RISK_PCT", "0.01"))
-    # CONFLUENCE À 80% - ELITE SIGNALS (8+ flags minimum)
-    CONFLUENCE_THRESH: float = 0.80  # 80% minimum pour filtrer
+    # CONFLUENCE À 76% - HIGH QUALITY SIGNALS (8+ flags minimum)
+    CONFLUENCE_THRESH: float = 0.76  # 76% minimum pour des signaux de haute qualité
     
     # Risk Management
     ATR_SL_MULT: float = float(os.getenv("ATR_SL_MULT", "1.5"))

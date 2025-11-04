@@ -2,11 +2,13 @@
 Pydantic models for TradingView webhook data validation
 """
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class Flags(BaseModel):
     """SMC confluence flags for signal validation"""
+    model_config = ConfigDict(extra='forbid')
+    
     poi_valid: bool = Field(default=False, description="Point of Interest validity")
     fvg_open: bool = Field(default=False, description="Fair Value Gap open")
     ob_valid: bool = Field(default=False, description="Order Block validity") 
@@ -21,6 +23,8 @@ class Flags(BaseModel):
 
 class PriceCtx(BaseModel):
     """Price context for trade entry and levels"""
+    model_config = ConfigDict(extra='forbid')
+    
     entry: float = Field(description="Entry price level")
     ref_high: float = Field(description="Reference high for calculations")
     ref_low: float = Field(description="Reference low for calculations")
@@ -28,6 +32,8 @@ class PriceCtx(BaseModel):
 
 class TVPayload(BaseModel):
     """TradingView webhook payload structure"""
+    model_config = ConfigDict(extra='forbid')
+    
     event_id: str = Field(description="Unique event identifier")
     symbol: str = Field(description="Trading symbol (e.g., EURUSD)")
     timeframe: str = Field(description="Chart timeframe (e.g., 15m, 1h)")

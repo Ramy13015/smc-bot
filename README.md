@@ -1,8 +1,27 @@
-# SMC Trading Bot
+# 🤖 SMC Trading Bot - HIGH VOLUME MARKETS
 
-Complete Smart Money Concepts Trading Bot with TradingView webhook integration.
+**Status:** ✅ **100% Opérationnel** | **Version:** 2.0.0 | **Python:** 3.14+
 
-## 🚀 Quick Deploy on Render
+Complete Smart Money Concepts Trading Bot with TradingView webhook integration.  
+Specialized for **HIGH VOLUME FOREX & CRYPTO PERPETUALS**.
+
+---
+
+## 🚀 Quick Start
+
+### Local Development
+```powershell
+# 1. Clone and navigate
+cd c:\Users\bouga\Desktop\smc-bot
+
+# 2. Start the bot (automated setup)
+.\start.bat
+
+# 3. Test Telegram
+python test_telegram.py
+```
+
+### Deploy on Render
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
