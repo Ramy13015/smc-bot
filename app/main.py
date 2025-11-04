@@ -158,30 +158,50 @@ async def tradingview_webhook(request: Request):
     price_distance = abs(entry - sl)
     position_size = risk_amount / price_distance if price_distance > 0 else 0
     
-    # Active flags for display
+    # Build active flags list with all details
     active_flags = []
     if poi_valid:
-        active_flags.append("POI Valid")
+        active_flags.append("✅ Poi Valid")
     if fvg_open:
-        active_flags.append("FVG Open")
+        active_flags.append("✅ Fvg Open")
     if ob_valid:
-        active_flags.append("OB Valid")
+        active_flags.append("✅ Ob Valid")
     
-    # Format message avec timeframe
+    # Calculate confluence score (simple count of active flags)
+    flag_count = sum([poi_valid, fvg_open, ob_valid])
+    confluence_score = (flag_count / 3.0) * 100  # 3 flags tracked
+    
+    # Format timeframe display
+    tf_display = timeframe
+    if timeframe == "5":
+        tf_display = "5min"
+    elif timeframe == "15":
+        tf_display = "15min"
+    elif timeframe == "60":
+        tf_display = "1h"
+    elif timeframe == "240":
+        tf_display = "4h"
+    
+    # Format message - Style professionnel
     direction_emoji = "🟢" if direction == "LONG" else "🔴"
+    
+    flags_display = "\n".join(active_flags) if active_flags else "None"
+    
     message = f"""{direction_emoji} **SMC SIGNAL - {direction} {symbol}**
 
-⏱️ **Timeframe:** `{timeframe}`
+📊 **Confluence Score:** `{confluence_score:.1f}%`
+📈 **Timeframe:** `{tf_display}`
 💰 **Entry:** `{entry:.5f}`
 🛑 **Stop Loss:** `{sl:.5f}`
 🎯 **Take Profit:** `{tp:.5f}`
 📏 **Position Size:** `{position_size:.2f}`
 ⚖️ **Risk:Reward:** `1:{rr_ratio:.2f}`
-📊 **ATR:** `{atr:.2f}`
 
-🎯 **Flags:** {', '.join(active_flags) if active_flags else 'None'}
+🎯 **Active Flags:**
+{flags_display}
 
-📢 *@MonBotFibo*"""
+📢 *@MonBotFibo*
+    """.strip()
     
     # Send Telegram notification
     telegram_success = send_telegram_message(
