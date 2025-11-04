@@ -88,7 +88,10 @@ short_condition = short_signal_strength and close < ema_fast
 // === WEBHOOK PAYLOAD - PINE CALCULE TOUT ===
 if (long_condition or short_condition) and high_volume
     direction = long_condition ? "LONG" : "SHORT"
-    event_id = str.tostring(symbol_select) + "_" + str.tostring(time)
+    
+    // EVENT ID UNIQUE PAR BOUGIE (évite doublons)
+    bar_time = str.tostring(time)
+    event_id = symbol_select + "_" + bar_time + "_" + direction
     
     // PINE SCRIPT CALCULE SL/TP (pas le bot Python)
     final_atr = asset_type == "crypto" ? vol_weighted_atr : atr_value
