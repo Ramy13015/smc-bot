@@ -3,7 +3,7 @@ indicator("SMC Detector - HIGH VOLUME MARKETS", shorttitle="SMC-HV", overlay=tru
 
 // === CONFIGURATION HIGH VOLUME ===
 symbol_select = input.string("BTCUSDT.P", "High Volume Symbol", options=["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "XAUUSD", "BTCUSDT.P", "ETHUSDT.P", "SOLUSDT.P", "ADAUSDT.P", "DOGEUSDT.P", "XRPUSDT.P"])
-htf_tf = input.timeframe("15", "Timeframe", options=["15", "60"])
+htf_tf = input.timeframe("5", "Timeframe", options=["1", "5", "15", "60"])
 webhook_url = input.string("https://smc-gal.onrender.com/tv", "Webhook URL")
 
 // Volume filter for high-activity markets only
@@ -94,7 +94,7 @@ if (long_condition or short_condition) and high_volume
     final_atr = asset_type == "crypto" ? vol_weighted_atr : atr_value
     
     // Dynamic timeframe in payload
-    tf_display = htf_tf == "15" ? "15min" : "1h"
+    tf_display = htf_tf == "1" ? "1min" : htf_tf == "5" ? "5min" : htf_tf == "15" ? "15min" : "1h"
     
     // Simplified payload construction
     payload = '{"event_id":"' + event_id + '","symbol":"' + symbol_select + '","timeframe":"' + tf_display + '","direction":"' + direction + '","price_ctx":{"entry":' + str.tostring(close) + ',"ref_high":' + str.tostring(high) + ',"ref_low":' + str.tostring(low) + '},"atr":' + str.tostring(final_atr) + ',"asset_type":"' + asset_type + '","flags":{"poi_valid":' + str.tostring(poi_valid) + ',"fvg_open":' + str.tostring(fvg_open) + ',"ob_valid":' + str.tostring(ob_valid) + ',"bos_confirm":' + str.tostring(bos_confirm) + ',"choch_confirm":' + str.tostring(choch_confirm) + ',"liq_swept":' + str.tostring(liq_swept) + ',"imbalance_filled":' + str.tostring(imbalance_filled) + ',"trend_aligned":' + str.tostring(trend_aligned) + ',"volume_confirm":' + str.tostring(volume_confirm) + ',"time_filter":' + str.tostring(time_filter) + '}}'
