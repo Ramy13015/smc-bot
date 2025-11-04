@@ -96,29 +96,22 @@ async def health():
 @app.post("/tv")
 async def tradingview_webhook(request: Request):
     """
-    TradingView webhook endpoint for processing trading signals
+    TradingView webhook - DIRECT RELAY MODE
     
-    Process:
-    1. Parse and validate JSON payload
-    2. Check for duplicate signals
-    3. Calculate SMC confluence score
-    4. Validate critical flags
-    5. Calculate risk management parameters
-    6. Send Telegram notification if score meets threshold
+    Pine Script calcule TOUT (entry, sl, tp).
+    Le bot Python ne fait que relayer vers Telegram.
     
     Returns:
-        200: Signal processed and sent
-        202: Signal received but not sent (duplicate/below threshold/invalid)
+        200: Signal sent
         400: Invalid JSON
-        422: Validation error
     """
     request_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{id(request)}"
     logger.info(f"[{request_id}] Webhook received")
     
     # Parse JSON payload
     try:
-        raw_payload = await request.json()
-        logger.debug(f"[{request_id}] Raw payload: {raw_payload}")
+        data = await request.json()
+        logger.info(f"[{request_id}] Pine Script data: {data}")
     except Exception as e:
         logger.error(f"[{request_id}] JSON parse error: {e}")
         raise HTTPException(
@@ -126,107 +119,67 @@ async def tradingview_webhook(request: Request):
             detail="Invalid JSON format"
         )
     
-    # Validate with Pydantic
-    try:
-        payload = TVPayload(**raw_payload)
-        logger.info(
-            f"[{request_id}] Valid payload: {payload.symbol} {payload.direction} "
-            f"@ {payload.price_ctx.entry}"
-        )
-    except ValidationError as e:
-        logger.error(f"[{request_id}] Validation error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=e.errors()
-        )
+    # Extract data (Pine Script a TOUT calculé)
+    event_id = data.get("event_id")
+    symbol = data.get("symbol")
+    direction = data.get("direction")
+    entry = data.get("entry")
+    sl = data.get("sl")
+    tp = data.get("tp")
+    atr = data.get("atr")
+    poi_valid = data.get("poi_valid", False)
+    fvg_open = data.get("fvg_open", False)
+    ob_valid = data.get("ob_valid", False)
+    
+    logger.info(
+        f"[{request_id}] PINE SCRIPT DATA: {symbol} {direction} "
+        f"Entry={entry} SL={sl} TP={tp} ATR={atr}"
+    )
     
     # Check for duplicates
-    event_id = payload.event_id
     if is_duplicate(event_id, Config.ANTI_SPAM_TTL):
         logger.info(f"[{request_id}] Duplicate signal: {event_id}")
         return JSONResponse(
             status_code=202,
             content={
                 "ok": True,
-                "score": 0,
                 "sent": False,
-                "reason": "duplicate_suppressed",
+                "reason": "duplicate",
                 "event_id": event_id
             }
         )
     
-    # Calculate confluence score
-    score = calculate_confluence_score(payload.flags)
-    logger.info(f"[{request_id}] Confluence score: {score:.2f} (threshold: {Config.CONFLUENCE_THRESH})")
+    # Calculate Risk:Reward ratio
+    rr_ratio = calculate_rr_ratio(entry, sl, tp)
     
-    # Validate critical flags
-    flags_valid, invalid_reason = validate_critical_flags(payload.flags)
-    if not flags_valid:
-        logger.warning(f"[{request_id}] Critical flags missing: {invalid_reason}")
-        return JSONResponse(
-            status_code=202,
-            content={
-                "ok": True,
-                "score": score,
-                "sent": False,
-                "reason": invalid_reason,
-                "event_id": event_id
-            }
-        )
+    # Calculate position size (only thing we calculate)
+    risk_amount = Config.BASE_EQUITY * Config.RISK_PCT
+    price_distance = abs(entry - sl)
+    position_size = risk_amount / price_distance if price_distance > 0 else 0
     
-    # Check score threshold
-    if score < Config.CONFLUENCE_THRESH:
-        logger.info(f"[{request_id}] Score below threshold: {score} < {Config.CONFLUENCE_THRESH}")
-        return JSONResponse(
-            status_code=202,
-            content={
-                "ok": True,
-                "score": score,
-                "sent": False,
-                "reason": "below_threshold",
-                "event_id": event_id
-            }
-        )
+    # Active flags for display
+    active_flags = []
+    if poi_valid:
+        active_flags.append("POI Valid")
+    if fvg_open:
+        active_flags.append("FVG Open")
+    if ob_valid:
+        active_flags.append("OB Valid")
     
-    # Calculate risk management parameters
-    try:
-        entry, sl, tp, position_size = calculate_risk_parameters(
-            payload=payload,
-            base_equity=Config.BASE_EQUITY,
-            risk_pct=Config.RISK_PCT,
-            atr_sl_mult=Config.ATR_SL_MULT,
-            atr_tp_mult=Config.ATR_TP_MULT
-        )
-        
-        rr_ratio = calculate_rr_ratio(entry, sl, tp)
-        
-        logger.info(
-            f"[{request_id}] Trade params: Entry={entry}, SL={sl}, TP={tp}, "
-            f"Size={position_size}, R:R=1:{rr_ratio}"
-        )
-    except Exception as e:
-        logger.error(f"[{request_id}] Risk calculation error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error calculating trade parameters"
-        )
-    
-    # Get active flags
-    active_flags = get_active_flags(payload.flags)
-    
-    # Format Telegram message
-    message = format_telegram_message(
-        score=score,
-        symbol=payload.symbol,
-        timeframe=payload.timeframe,
-        direction=payload.direction,
-        entry=entry,
-        sl=sl,
-        tp=tp,
-        position_size=position_size,
-        rr_ratio=rr_ratio,
-        flags=active_flags
-    )
+    # Format message (simplifié)
+    direction_emoji = "🟢" if direction == "LONG" else "🔴"
+    message = f"""{direction_emoji} **SMC SIGNAL - {direction} {symbol}**
+
+💰 **Entry:** `{entry:.5f}`
+🛑 **Stop Loss:** `{sl:.5f}`
+🎯 **Take Profit:** `{tp:.5f}`
+📏 **Position Size:** `{position_size:.2f}`
+⚖️ **Risk:Reward:** `1:{rr_ratio:.2f}`
+📊 **ATR:** `{atr:.2f}`
+
+🎯 **Flags:** {', '.join(active_flags) if active_flags else 'None'}
+
+📢 *@MonBotFibo*"""
     
     # Send Telegram notification
     telegram_success = send_telegram_message(
@@ -236,12 +189,11 @@ async def tradingview_webhook(request: Request):
     )
     
     if telegram_success:
-        logger.info(f"[{request_id}] Signal sent successfully: {event_id}")
+        logger.info(f"[{request_id}] ✅ SIGNAL SENT: {event_id}")
         return JSONResponse(
             status_code=200,
             content={
                 "ok": True,
-                "score": score,
                 "sent": True,
                 "event_id": event_id,
                 "trade": {
@@ -254,12 +206,11 @@ async def tradingview_webhook(request: Request):
             }
         )
     else:
-        logger.error(f"[{request_id}] Telegram send failed: {event_id}")
+        logger.error(f"[{request_id}] ❌ TELEGRAM FAILED: {event_id}")
         return JSONResponse(
             status_code=202,
             content={
                 "ok": True,
-                "score": score,
                 "sent": False,
                 "reason": "telegram_error",
                 "event_id": event_id

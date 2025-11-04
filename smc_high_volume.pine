@@ -85,19 +85,20 @@ short_signal_strength = (poi_valid or fvg_open) and high_volume
 long_condition = long_signal_strength and close > ema_fast
 short_condition = short_signal_strength and close < ema_fast
 
-// === WEBHOOK PAYLOAD ===
+// === WEBHOOK PAYLOAD - PINE CALCULE TOUT ===
 if (long_condition or short_condition) and high_volume
     direction = long_condition ? "LONG" : "SHORT"
-    event_id = str.tostring(symbol_select) + "_HV_" + str.tostring(time) + "_" + str.tostring(math.round(math.random()*10000))
+    event_id = str.tostring(symbol_select) + "_" + str.tostring(time)
     
-    // Use volume-weighted ATR for crypto perpetuals
+    // PINE SCRIPT CALCULE SL/TP (pas le bot Python)
     final_atr = asset_type == "crypto" ? vol_weighted_atr : atr_value
     
-    // Dynamic timeframe in payload
-    tf_display = htf_tf == "1" ? "1min" : htf_tf == "5" ? "5min" : htf_tf == "15" ? "15min" : "1h"
+    entry_price = close
+    stop_loss = direction == "LONG" ? entry_price - (final_atr * 2.5) : entry_price + (final_atr * 2.5)
+    take_profit = direction == "LONG" ? entry_price + (final_atr * 4.0) : entry_price - (final_atr * 4.0)
     
-    // Simplified payload construction
-    payload = '{"event_id":"' + event_id + '","symbol":"' + symbol_select + '","timeframe":"' + tf_display + '","direction":"' + direction + '","price_ctx":{"entry":' + str.tostring(close) + ',"ref_high":' + str.tostring(high) + ',"ref_low":' + str.tostring(low) + '},"atr":' + str.tostring(final_atr) + ',"asset_type":"' + asset_type + '","flags":{"poi_valid":' + str.tostring(poi_valid) + ',"fvg_open":' + str.tostring(fvg_open) + ',"ob_valid":' + str.tostring(ob_valid) + ',"bos_confirm":' + str.tostring(bos_confirm) + ',"choch_confirm":' + str.tostring(choch_confirm) + ',"liq_swept":' + str.tostring(liq_swept) + ',"imbalance_filled":' + str.tostring(imbalance_filled) + ',"trend_aligned":' + str.tostring(trend_aligned) + ',"volume_confirm":' + str.tostring(volume_confirm) + ',"time_filter":' + str.tostring(time_filter) + '}}'
+    // JSON COMPLET - Tout est calculé ici
+    payload = '{"event_id":"' + event_id + '","symbol":"' + symbol_select + '","direction":"' + direction + '","entry":' + str.tostring(entry_price) + ',"sl":' + str.tostring(stop_loss) + ',"tp":' + str.tostring(take_profit) + ',"atr":' + str.tostring(final_atr) + ',"poi_valid":' + str.tostring(poi_valid) + ',"fvg_open":' + str.tostring(fvg_open) + ',"ob_valid":' + str.tostring(ob_valid) + '}'
     
     alert(payload, alert.freq_once_per_bar)
 
