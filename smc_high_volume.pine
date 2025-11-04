@@ -146,12 +146,9 @@ if long_condition or short_condition
     line.delete(fib_618[1])
     line.delete(fib_786[1])
     
-    fib_50 := line.new(bar_index, fib_50_level, bar_index + 20, fib_50_level, 
-                       color=color.new(color.gray, 60), width=1, style=line.style_dashed)
-    fib_618 := line.new(bar_index, fib_618_level, bar_index + 20, fib_618_level,
-                        color=color.new(color.orange, 60), width=1, style=line.style_dashed)
-    fib_786 := line.new(bar_index, fib_786_level, bar_index + 20, fib_786_level,
-                        color=color.new(color.red, 60), width=1, style=line.style_dashed)
+    fib_50 := line.new(x1=bar_index, y1=fib_50_level, x2=bar_index + 20, y2=fib_50_level, color=color.new(color.gray, 60), width=1, style=line.style_dashed)
+    fib_618 := line.new(x1=bar_index, y1=fib_618_level, x2=bar_index + 20, y2=fib_618_level, color=color.new(color.orange, 60), width=1, style=line.style_dashed)
+    fib_786 := line.new(x1=bar_index, y1=fib_786_level, x2=bar_index + 20, y2=fib_786_level, color=color.new(color.red, 60), width=1, style=line.style_dashed)
 
 // 5️⃣ EMAs - Subtle lines
 plot(ema_fast, "EMA 21", color=color.new(color.aqua, 70), linewidth=1)
