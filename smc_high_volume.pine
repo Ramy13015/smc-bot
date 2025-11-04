@@ -23,7 +23,7 @@ get_symbol_data() =>
 
 // === HIGH VOLUME FILTER ===
 volume_sma = ta.sma(volume, 20)
-high_volume = volume > volume_sma * min_volume_mult
+high_volume = volume > volume_sma * 1.0  // TEST: Lowered from 1.5x to 1.0x for more signals
 
 // === SMC DETECTION ENHANCED ===
 // ATR calculation with asset-specific adjustments
@@ -35,12 +35,12 @@ vol_weighted_atr = atr_value * (volume / volume_sma)
 
 // POI (Point of Interest) detection - Enhanced for high volume
 rsi_value = ta.rsi(close, 14)
-poi_valid = (ta.crossover(rsi_value, 30) or ta.crossunder(rsi_value, 70)) and high_volume
+poi_valid = (ta.crossover(rsi_value, 30) or ta.crossunder(rsi_value, 70))  // TEST: Removed high_volume requirement
 
 // FVG (Fair Value Gap) detection - More strict for perpetuals
-fvg_threshold = asset_type == "crypto" ? 0.8 : 0.5
+fvg_threshold = asset_type == "crypto" ? 0.5 : 0.3  // TEST: Lowered from 0.8/0.5 to 0.5/0.3
 fvg_gap = math.abs(high[1] - low[1]) > atr_value * fvg_threshold
-fvg_open = fvg_gap and (close > high[1] or close < low[1]) and high_volume
+fvg_open = fvg_gap and (close > high[1] or close < low[1])  // TEST: Removed high_volume requirement
 
 // Order Block detection - Volume confirmation required
 ob_volume_threshold = asset_type == "crypto" ? 2.0 : 1.5
@@ -77,12 +77,13 @@ avoid_hours = is_crypto ? false : (hour >= 22 or hour <= 2)
 time_filter = not avoid_hours and high_volume
 
 // === SIGNAL GENERATION FOR HIGH VOLUME ===
-// More strict conditions for high volume markets
-long_signal_strength = poi_valid and fvg_open and trend_aligned and volume_confirm
-short_signal_strength = poi_valid and fvg_open and trend_aligned and volume_confirm
+// TEST MODE: Relaxed conditions to verify connection
+// Original: poi_valid and fvg_open and trend_aligned and volume_confirm
+long_signal_strength = (poi_valid or fvg_open) and high_volume  // Just need ONE of POI or FVG
+short_signal_strength = (poi_valid or fvg_open) and high_volume
 
-long_condition = long_signal_strength and close > ema_fast and high_volume
-short_condition = short_signal_strength and close < ema_fast and high_volume
+long_condition = long_signal_strength and close > ema_fast
+short_condition = short_signal_strength and close < ema_fast
 
 // === WEBHOOK PAYLOAD ===
 if (long_condition or short_condition) and high_volume
