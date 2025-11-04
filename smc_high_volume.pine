@@ -52,7 +52,8 @@ ob_valid = ob_volume and ema_cross
 swing_length = asset_type == "crypto" ? 7 : 5
 swing_high = ta.pivothigh(high, swing_length, swing_length)
 swing_low = ta.pivotlow(low, swing_length, swing_length)
-bos_confirm = (not na(swing_high) or not na(swing_low)) and high_volume
+bos_detected = not na(swing_high) or not na(swing_low)
+bos_confirm = bos_detected and high_volume
 
 // CHOCH (Change of Character) - Trend reversal detection
 ema_fast = ta.ema(close, 21)

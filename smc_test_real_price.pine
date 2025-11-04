@@ -1,0 +1,70 @@
+//@version=5
+indicator("SMC TEST REAL PRICE", shorttitle="SMC-TEST", overlay=true)
+
+// === CONFIGURATION ===
+webhook_url = input.string("https://smc-gal.onrender.com/tv", "Webhook URL")
+
+// === PRIX RÉEL DIRECT (PAS DE BLUFF) ===
+real_price = close
+real_high = high
+real_low = low
+atr_val = ta.atr(14)
+
+// === SIGNAL FORCÉ POUR TEST ===
+long_test = true  // Force un LONG pour test
+
+// === ALERT AVEC PRIX RÉEL ===
+if bar_index % 5 == 0  // Toutes les 5 bougies (pour éviter spam)
+    event_id = "TEST_REAL_" + str.tostring(time) + "_" + str.tostring(math.round(math.random()*10000))
+    
+    payload = '{"event_id":"' + event_id + 
+              '","symbol":"BINANCE:BTCUSDT"' +
+              ',"timeframe":"15min"' +
+              ',"direction":"LONG"' +
+              ',"price_ctx":{"entry":' + str.tostring(real_price) + 
+              ',"ref_high":' + str.tostring(real_high) + 
+              ',"ref_low":' + str.tostring(real_low) + 
+              '},"flags":{"poi_valid":true,"fvg_open":true,"ob_valid":true,"bos_confirm":true,"choch_confirm":true,"liq_swept":true,"imbalance_filled":true,"trend_aligned":true,"volume_confirm":true,"time_filter":true}' +
+              ',"atr":' + str.tostring(atr_val) + 
+              ',"asset_type":"crypto"}'
+    
+    alert(payload, alert.freq_once_per_bar)
+
+// === VISUEL TEST ===
+plotshape(long_test, "TEST LONG", shape.triangleup, location.belowbar, color.new(color.green, 0), size=size.large)
+
+// Label avec prix réel
+var label price_label = na
+label.delete(price_label)
+price_label := label.new(bar_index, low * 0.999, 
+                         "🧪 TEST MODE\nBTC: $" + str.tostring(math.round(real_price, 2)) + 
+                         "\nATR: " + str.tostring(math.round(atr_val, 2)), 
+                         color=color.new(color.orange, 0), 
+                         textcolor=color.white, 
+                         style=label.style_label_up, 
+                         size=size.large)
+
+// Background jaune pour mode test
+bgcolor(bar_index % 5 == 0 ? color.new(color.yellow, 80) : na, title="Signal Test")
+
+// Table d'info en temps réel
+var table info = table.new(position.top_right, 2, 5, bgcolor=color.new(color.white, 10), border_width=2)
+if barstate.islast
+    table.cell(info, 0, 0, "🧪 TEST MODE", bgcolor=color.orange, text_color=color.white, text_size=size.normal)
+    table.cell(info, 1, 0, "ACTIVE", bgcolor=color.orange, text_color=color.white, text_size=size.normal)
+    
+    table.cell(info, 0, 1, "Symbol", bgcolor=color.gray, text_color=color.white)
+    table.cell(info, 1, 1, "BINANCE:BTCUSDT", text_color=color.blue)
+    
+    table.cell(info, 0, 2, "Real Price", bgcolor=color.gray, text_color=color.white)
+    table.cell(info, 1, 2, "$" + str.tostring(math.round(real_price, 2)), text_color=color.green, text_size=size.normal)
+    
+    table.cell(info, 0, 3, "ATR", bgcolor=color.gray, text_color=color.white)
+    table.cell(info, 1, 3, str.tostring(math.round(atr_val, 2)), text_color=color.purple)
+    
+    table.cell(info, 0, 4, "Next Signal", bgcolor=color.gray, text_color=color.white)
+    bars_until = 5 - (bar_index % 5)
+    table.cell(info, 1, 4, str.tostring(bars_until) + " bars", text_color=color.red)
+
+// Plot prix pour référence
+plot(real_price, "Real Price", color=color.new(color.blue, 0), linewidth=2)
