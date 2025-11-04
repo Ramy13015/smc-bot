@@ -103,94 +103,14 @@ if (long_condition or short_condition) and high_volume
 
 // === 🎨 PROFESSIONAL UI - CLEAN & MINIMAL ===
 
-// 1️⃣ SINGLE ARROW PER SIGNAL (no clutter)
+// 1️⃣ SINGLE ARROW PER SIGNAL (petite taille, pas de texte)
 plotshape(long_condition and high_volume, style=shape.triangleup, location=location.belowbar, 
-          color=color.new(color.lime, 0), size=size.huge, title="LONG", text="🔼")
+          color=color.new(color.lime, 0), size=size.small, title="LONG")
 plotshape(short_condition and high_volume, style=shape.triangledown, location=location.abovebar, 
-          color=color.new(color.red, 0), size=size.huge, title="SHORT", text="🔽")
+          color=color.new(color.red, 0), size=size.small, title="SHORT")
 
-// 2️⃣ FVG BOXES (Fair Value Gap) - 90% transparent
-var box fvg_box = na
-if fvg_open
-    fvg_top = math.max(high[1], close)
-    fvg_bottom = math.min(low[1], close)
-    box.delete(fvg_box[1])
-    fvg_box := box.new(bar_index - 1, fvg_top, bar_index + 5, fvg_bottom, 
-                       border_color=color.new(color.yellow, 50), 
-                       bgcolor=color.new(color.yellow, 90),
-                       border_width=1)
+// 2️⃣ Pas de boxes - Trop encombrant, on garde juste les flèches
 
-// 3️⃣ ORDER BLOCK BOXES - 85% transparent
-var box ob_box = na
-if ob_valid
-    ob_top = high
-    ob_bottom = low
-    box.delete(ob_box[1])
-    ob_box := box.new(bar_index, ob_top, bar_index + 10, ob_bottom,
-                      border_color=color.new(color.blue, 50),
-                      bgcolor=color.new(color.blue, 85),
-                      border_width=2)
-
-// 4️⃣ FIBONACCI LEVELS (50%, 61.8%, 78.6%)
-var line fib_50 = na
-var line fib_618 = na
-var line fib_786 = na
-if long_condition or short_condition
-    swing_range = high - low
-    fib_50_level = low + swing_range * 0.5
-    fib_618_level = low + swing_range * 0.618
-    fib_786_level = low + swing_range * 0.786
-    
-    line.delete(fib_50[1])
-    line.delete(fib_618[1])
-    line.delete(fib_786[1])
-    
-    fib_50 := line.new(x1=bar_index, y1=fib_50_level, x2=bar_index + 20, y2=fib_50_level, color=color.new(color.gray, 60), width=1, style=line.style_dashed)
-    fib_618 := line.new(x1=bar_index, y1=fib_618_level, x2=bar_index + 20, y2=fib_618_level, color=color.new(color.orange, 60), width=1, style=line.style_dashed)
-    fib_786 := line.new(x1=bar_index, y1=fib_786_level, x2=bar_index + 20, y2=fib_786_level, color=color.new(color.red, 60), width=1, style=line.style_dashed)
-
-// 5️⃣ EMAs - Subtle lines
+// 3️⃣ EMAs - Lignes simples
 plot(ema_fast, "EMA 21", color=color.new(color.aqua, 70), linewidth=1)
 plot(ema_slow, "EMA 50", color=color.new(color.orange, 70), linewidth=1)
-plot(ema_200, "EMA 200", color=color.new(color.white, 80), linewidth=2)
-
-// 6️⃣ STATUS LABEL - Fixed top right
-var label status_label = na
-if barstate.islast
-    label.delete(status_label)
-    status_text = symbol_select + " | " + asset_type + " | " + htf_tf + "min"
-    status_color = high_volume ? color.new(color.green, 10) : color.new(color.gray, 10)
-    status_label := label.new(bar_index, high, status_text, 
-                              style=label.style_label_left, 
-                              color=status_color, 
-                              textcolor=color.white, 
-                              size=size.normal,
-                              yloc=yloc.price)
-
-// 7️⃣ STATS TABLE - Bottom right (4 rows)
-var table stats_table = table.new(position.bottom_right, 2, 4, 
-                                   bgcolor=color.new(color.black, 20), 
-                                   border_color=color.new(color.gray, 50),
-                                   border_width=1)
-if barstate.islast
-    // Row 1: Volume Status
-    table.cell(stats_table, 0, 0, "Volume", text_color=color.gray, text_size=size.small, bgcolor=color.new(color.black, 30))
-    vol_status = high_volume ? "HIGH ✅" : "LOW ⚠️"
-    vol_color = high_volume ? color.lime : color.orange
-    table.cell(stats_table, 1, 0, vol_status, text_color=vol_color, text_size=size.small, bgcolor=color.new(color.black, 30))
-    
-    // Row 2: ATR
-    table.cell(stats_table, 0, 1, "ATR", text_color=color.gray, text_size=size.small, bgcolor=color.new(color.black, 30))
-    atr_display = str.tostring(math.round(atr_value, 2))
-    table.cell(stats_table, 1, 1, atr_display, text_color=color.white, text_size=size.small, bgcolor=color.new(color.black, 30))
-    
-    // Row 3: Signals Today
-    table.cell(stats_table, 0, 2, "Signals", text_color=color.gray, text_size=size.small, bgcolor=color.new(color.black, 30))
-    signal_count = ta.cum(long_condition or short_condition ? 1 : 0)
-    table.cell(stats_table, 1, 2, str.tostring(signal_count), text_color=color.yellow, text_size=size.small, bgcolor=color.new(color.black, 30))
-    
-    // Row 4: Last Signal
-    table.cell(stats_table, 0, 3, "Last", text_color=color.gray, text_size=size.small, bgcolor=color.new(color.black, 30))
-    last_signal = long_condition ? "LONG 🔼" : short_condition ? "SHORT 🔽" : "-"
-    last_color = long_condition ? color.lime : short_condition ? color.red : color.gray
-    table.cell(stats_table, 1, 3, last_signal, text_color=last_color, text_size=size.small, bgcolor=color.new(color.black, 30))
