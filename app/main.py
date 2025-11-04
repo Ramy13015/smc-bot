@@ -155,8 +155,8 @@ async def tradingview_webhook(request: Request):
     
     logger.info(f"[{request_id}] Confluence: {confluence_score:.1f}% (threshold: {Config.CONFLUENCE_THRESH*100:.0f}%)")
     
-    # Check confluence threshold
-    if confluence_score < (Config.CONFLUENCE_THRESH * 100):
+    # Check confluence threshold (>= pour inclure exactement 70%)
+    if confluence_score < (Config.CONFLUENCE_THRESH * 100) - 0.01:  # -0.01 pour éviter les erreurs de floating point
         logger.info(f"[{request_id}] Below threshold - Signal rejected")
         return JSONResponse(
             status_code=202,
