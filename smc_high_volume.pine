@@ -113,16 +113,23 @@ if (long_condition or short_condition)
     
     alert(payload, alert.freq_once_per_bar)
 
+// === CALCUL CONFLUENCE SCORE (même logique que Python) ===
+flag_count = (poi_valid ? 1 : 0) + (fvg_open ? 1 : 0) + (ob_valid ? 1 : 0) + (bos_confirm ? 1 : 0) + (choch_confirm ? 1 : 0) + (liq_swept ? 1 : 0) + (imbalance_filled ? 1 : 0) + (trend_aligned ? 1 : 0) + (volume_confirm ? 1 : 0) + (time_filter ? 1 : 0)
+confluence_score = (flag_count / 10.0) * 100
+
+// SEUIL 80% - Ne montre les flèches QUE si confluence ≥ 80%
+show_signal = confluence_score >= 80.0
+
 // === 🎨 PROFESSIONAL UI - STYLE OPAL ===
 
-// Alertes avec texte clair (comme OPAL)
-alert_text_long = "SMC-HV - LONG ENTRY\n" + symbol_select + ", " + current_tf + " • " + str.format("{0,time,HH:mm:ss}", time)
-alert_text_short = "SMC-HV - SHORT ENTRY\n" + symbol_select + ", " + current_tf + " • " + str.format("{0,time,HH:mm:ss}", time)
+// Alertes avec texte clair + score de confluence
+alert_text_long = "SMC-HV - LONG ENTRY (" + str.tostring(confluence_score, "#") + "%)\n" + symbol_select + ", " + timeframe.period + " • " + str.format("{0,time,HH:mm:ss}", time)
+alert_text_short = "SMC-HV - SHORT ENTRY (" + str.tostring(confluence_score, "#") + "%)\n" + symbol_select + ", " + timeframe.period + " • " + str.format("{0,time,HH:mm:ss}", time)
 
-// Flèches avec labels propres
-plotshape(long_condition, style=shape.triangleup, location=location.belowbar, 
+// Flèches UNIQUEMENT si confluence ≥ 80%
+plotshape(long_condition and show_signal, style=shape.triangleup, location=location.belowbar, 
           color=color.new(color.lime, 0), size=size.small, title="LONG", text="L")
-plotshape(short_condition, style=shape.triangledown, location=location.abovebar, 
+plotshape(short_condition and show_signal, style=shape.triangledown, location=location.abovebar, 
           color=color.new(color.red, 0), size=size.small, title="SHORT", text="S")
 
 // 2️⃣ Pas de boxes - Trop encombrant, on garde juste les flèches
