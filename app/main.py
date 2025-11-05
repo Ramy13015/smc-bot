@@ -18,7 +18,7 @@ from app.smc import (
     calculate_rr_ratio,
     get_active_flags
 )
-from app.notifier import send_telegram_message, format_telegram_message
+from app.notifier import send_telegram_message, format_telegram_message, send_smc_ai_signal
 from app.utils import is_duplicate, get_cache_size, clear_cache
 from app.smc_ai import process_with_ai
 
@@ -258,41 +258,23 @@ async def tradingview_webhook(request: Request):
     if time_filter:
         active_flags.append("✅ Time Filter")
     
-    # Format timeframe display
-    tf_display = timeframe
-    if timeframe == "5":
-        tf_display = "5min"
-    elif timeframe == "15":
-        tf_display = "15min"
-    elif timeframe == "60":
-        tf_display = "1h"
-    elif timeframe == "240":
-        tf_display = "4h"
+    # Build original trade data for compatibility
+    original_trade_data = {
+        "symbol": symbol,
+        "direction": direction,
+        "entry": entry,
+        "sl": sl,
+        "tp": tp,
+        "timeframe": timeframe
+    }
     
-    # Format message - Style professionnel
-    direction_emoji = "🟢" if direction == "LONG" else "🔴"
-    
-    flags_display = "\n".join(active_flags) if active_flags else "None"
-    
-    message = f"""{direction_emoji} **SMC SIGNAL - {direction} {symbol}**
-
-📊 **Confluence Score:** `{confluence_score:.1f}%`
-📈 **Timeframe:** `{tf_display}`
-💰 **Entry:** `{entry:.5f}`
-🛑 **Stop Loss:** `{sl:.5f}`
-🎯 **Take Profit:** `{tp:.5f}`
-📏 **Position Size:** `{position_size:.2f}`
-⚖️ **Risk:Reward:** `1:{rr_ratio:.2f}`
-
-🎯 **Active Flags:**
-{flags_display}
-
-📢 *@MonBotFibo*
-    """.strip()
-    
-    # Send Telegram notification
-    telegram_success = send_telegram_message(
-        message=message,
+    # Send enhanced AI notification
+    telegram_success = send_smc_ai_signal(
+        trade_data=original_trade_data,
+        ai_trade=ai_trade,
+        confluence_score=confluence_score,
+        timeframe=timeframe,
+        active_flags=active_flags,
         token=Config.TELEGRAM_TOKEN,
         chat_id=Config.TELEGRAM_CHAT_ID
     )

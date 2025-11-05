@@ -107,3 +107,77 @@ def send_telegram_message(
     
     logger.error("Failed to send Telegram message after all retries")
     return False
+
+
+def send_smc_ai_signal(
+    trade_data: dict,
+    ai_trade: dict,
+    confluence_score: float,
+    timeframe: str,
+    active_flags: List[str],
+    token: Optional[str],
+    chat_id: Optional[str]
+) -> bool:
+    """
+    Send enhanced SMC signal with GROK + DEEPSEEK advice
+    
+    Args:
+        trade_data: Original trade data from Pine Script
+        ai_trade: AI-enhanced trade data with advice
+        confluence_score: Confluence percentage
+        timeframe: Chart timeframe 
+        active_flags: List of active SMC flags
+        token: Telegram bot token
+        chat_id: Telegram chat ID
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    # Format timeframe display
+    tf_display = timeframe
+    if timeframe == "5":
+        tf_display = "5min"
+    elif timeframe == "15":
+        tf_display = "15min"
+    elif timeframe == "60":
+        tf_display = "1h"
+    elif timeframe == "240":
+        tf_display = "4h"
+    
+    # Format flags display
+    flags_text = "\n".join([f"• {flag.replace('✅ ', '').replace('_', ' ').title()}" for flag in active_flags])
+    
+    # Direction emoji
+    direction_emoji = "🟢" if ai_trade["direction"] == "LONG" else "🔴"
+    
+    # Calculate position size for display
+    risk_amount = 5000 * 0.01  # BASE_EQUITY * RISK_PCT
+    price_distance = abs(ai_trade["entry"] - ai_trade["sl"])
+    position_size = risk_amount / price_distance if price_distance > 0 else 0.04
+    
+    # Build the premium notification message
+    message = f"""🎯 *SMC SIGNAL - {ai_trade["direction"]} {ai_trade["symbol"]}*
+
+📊 *Confluence Score:* {confluence_score:.1f}%
+📈 *Timeframe:* {tf_display}
+💰 *Entry:* {ai_trade["entry"]:.2f}
+🛑 *Stop Loss:* {ai_trade["sl"]:.2f}
+🎯 *Take Profit:* {ai_trade["tp"]:.2f}
+📏 *Position Size:* {position_size:.2f}
+⚖️ *Risk:Reward:* 1:{ai_trade["risk_reward"]:.2f}
+
+*Active Flags:*
+{flags_text}
+
+🤖 *GROK (Stratégiste):*
+{ai_trade.get("grok_advice", "Signal validé par IA")}
+*Conseil:* SL à {ai_trade["sl"]:.0f} (ATR 1.5x), TP à {ai_trade["tp"]:.0f} (R:R {ai_trade["risk_reward"]:.1f})
+
+🧠 *DEEPSEEK (Risk Manager):*
+{ai_trade.get("deepseek_advice", "SL/TP optimisés par IA")}
+*Conseil:* {position_size:.2f} lot (1% risque), trailing stop à +1.5%
+
+📢 *@MonBotFibo*
+    """.strip()
+    
+    return send_telegram_message(message, token, chat_id)

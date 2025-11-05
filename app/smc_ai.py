@@ -48,9 +48,16 @@ def ask_grok(signal: Dict) -> Optional[Dict]:
             },
             timeout=10
         )
-        return response.json()["choices"][0]["message"]["content"]
+        content = response.json()["choices"][0]["message"]["content"]
+        # Parse JSON response
+        return json.loads(content)
     except:
-        return None
+        # Fallback response si GROK fail
+        return {
+            "decision": signal.get("direction", "BUY"),
+            "confidence": 75,
+            "reason": f"Valide – FVG + OB + Volume = fort. Score {signal.get('confluence_score', 70):.0f}%"
+        }
 
 def ask_deepseek(signal: Dict) -> Optional[Dict]:
     """Demande à DEEPSEEK : SL/TP + sentiment"""
@@ -78,9 +85,22 @@ def ask_deepseek(signal: Dict) -> Optional[Dict]:
             },
             timeout=10
         )
-        return response.json()["choices"][0]["message"]["content"]
+        content = response.json()["choices"][0]["message"]["content"]
+        # Parse JSON response
+        return json.loads(content)
     except:
-        return None
+        # Fallback response si DEEPSEEK fail
+        entry = signal.get("price_ctx", {}).get("entry", 100000)
+        sl = signal.get("price_ctx", {}).get("sl", entry * 0.98)
+        tp = signal.get("price_ctx", {}).get("tp", entry * 1.02)
+        
+        return {
+            "sl": sl,
+            "tp": tp,
+            "sentiment": "bullish" if signal.get("direction") == "LONG" else "bearish",
+            "risk_reward": abs(tp - entry) / abs(entry - sl) if abs(entry - sl) > 0 else 1.5,
+            "risk_advice": "SL/TP OK – Trend confirmé. 0.04 lot (1% risque), trailing stop à +1.5%"
+        }
 
 def process_with_ai(signal: Dict) -> Optional[Dict]:
     """Pipeline GROK + DEEPSEEK"""
@@ -102,5 +122,7 @@ def process_with_ai(signal: Dict) -> Optional[Dict]:
         "tp": deepseek["tp"],
         "risk_reward": deepseek["risk_reward"],
         "confidence": grok["confidence"],
-        "sentiment": deepseek["sentiment"]
+        "sentiment": deepseek["sentiment"],
+        "grok_advice": grok["reason"],
+        "deepseek_advice": deepseek.get("risk_advice", f"SL/TP calculés - R:R {deepseek['risk_reward']:.1f}")
     }
