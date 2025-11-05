@@ -63,31 +63,32 @@ if ob_valid
 else
     ob_mitigated := false
 
-// === ANTI-PIÈGE : FILTRES PROFESSIONNELS ===
-// 1. Éviter les FAUX BREAKOUTS (piège des débutants)
+// === ANTI-PIÈGE : FILTRES PROFESSIONNELS (VERSION INTELLIGENTE) ===
+// 1. FAUX BREAKOUT - Rejeter les breakouts minuscules
 recent_high = ta.highest(high, 20)
 recent_low = ta.lowest(low, 20)
-is_fake_breakout_long = close > recent_high and close < recent_high * 1.005  // Breakout <0.5% = suspect
-is_fake_breakout_short = close < recent_low and close > recent_low * 0.995
+is_fake_breakout_long = close > recent_high and close < recent_high * 1.003  // <0.3%
+is_fake_breakout_short = close < recent_low and close > recent_low * 0.997
 
-// 2. Éviter les ZONES DE LIQUIDATION (piège des market makers)
-// Prix près des niveaux ronds psychologiques (ex: 100k, 3500, etc.)
+// 2. NIVEAUX RONDS - Éviter les zones de liquidation psychologiques
 price_mod_1000 = close % 1000
-price_mod_100 = close % 100
-near_round_level = (price_mod_1000 < 50 or price_mod_1000 > 950) or (price_mod_100 < 5 or price_mod_100 > 95)
+price_mod_500 = close % 500
+near_round_level = (price_mod_1000 < 20 or price_mod_1000 > 980) or (price_mod_500 < 10 or price_mod_500 > 490)
 
-// 3. STOP HUNT DETECTION - Éviter les mèches de liquidation
+// 3. STOP HUNT - Détecter les mèches de liquidation
 wick_size_upper = high - math.max(open, close)
 wick_size_lower = math.min(open, close) - low
 body_size = math.abs(close - open)
-is_stop_hunt = (wick_size_upper > body_size * 2) or (wick_size_lower > body_size * 2)
+is_stop_hunt = (wick_size_upper > body_size * 2.5) or (wick_size_lower > body_size * 2.5)
 
-// 4. RANGE-BOUND MARKET - Éviter de trader en consolidation
+// 4. RANGE TRADING - Éviter les consolidations
 atr_ratio = atr_value / close
-is_low_volatility = atr_ratio < 0.01  // Volatilité <1% = range
+is_low_volatility = atr_ratio < 0.008  // <0.8%
 
-// FILTRE COMBINÉ ANTI-PIÈGE
-no_trap = not is_fake_breakout_long and not is_fake_breakout_short and not near_round_level and not is_stop_hunt and not is_low_volatility
+// SCORE ANTI-PIÈGE (au lieu de tout bloquer, on compte les drapeaux rouges)
+trap_score = (is_fake_breakout_long or is_fake_breakout_short ? 1 : 0) + (near_round_level ? 1 : 0) + (is_stop_hunt ? 1 : 0) + (is_low_volatility ? 1 : 0)
+// Si 2 drapeaux rouges ou plus = probablement un piège
+is_likely_trap = trap_score >= 2
 
 // BOS - SIMPLIFIÉ
 swing_length = asset_type == "crypto" ? 5 : 3  // RÉDUIT
@@ -107,9 +108,9 @@ liq_swept = volume > ta.sma(volume, 10) * 2.0  // ABAISSÉ et sans high_volume
 imbalance_threshold = asset_type == "crypto" ? 0.8 : 0.5  // ABAISSÉ
 imbalance_filled = math.abs(close - open) > atr_value * imbalance_threshold
 
-// Trend alignment - SIMPLIFIÉ
+// Trend alignment - VERSION PERMISSIVE (juste la direction de base)
 ema_200 = ta.ema(close, 200)
-trend_aligned = (close > ema_fast and ema_fast > ema_slow) or (close < ema_fast and ema_fast < ema_slow)  // Sans EMA200
+trend_aligned = ema_fast != ema_slow  // Toujours vrai sauf si exactement égal (impossible)
 
 volume_confirm = volume > ta.sma(volume, 20) * 0.9  // ABAISSÉ
 
@@ -123,9 +124,18 @@ time_filter = not avoid_hours  // Sans high_volume requirement
 long_signal_strength = (poi_valid or fvg_open or ob_valid) and volume_confirm
 short_signal_strength = (poi_valid or fvg_open or ob_valid) and volume_confirm
 
-// FILTRE FINAL - Exige OB mitigé + volume + trend aligné + ANTI-PIÈGE
-valid_long = long_signal_strength and close > ema_fast and ob_mitigated and high_volume and trend_aligned and no_trap
-valid_short = short_signal_strength and close < ema_fast and ob_mitigated and high_volume and trend_aligned and no_trap
+// FILTRE FINAL - Version INTELLIGENTE avec protection anti-piège
+// Niveau 1: Signal de base + Direction
+basic_long = long_signal_strength and close > ema_fast
+basic_short = short_signal_strength and close < ema_fast
+
+// Niveau 2: Ajouter protection si OB détecté (OB = zone dangereuse)
+ob_protection_long = ob_valid ? ob_mitigated : true  // Si OB existe, exiger mitigation
+ob_protection_short = ob_valid ? ob_mitigated : true
+
+// Niveau 3: Filtrer les pièges évidents
+valid_long = basic_long and ob_protection_long and high_volume and not is_likely_trap
+valid_short = basic_short and ob_protection_short and high_volume and not is_likely_trap
 
 // Compatibilité avec le reste du code
 long_condition = valid_long
