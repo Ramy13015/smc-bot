@@ -20,6 +20,7 @@ from app.smc import (
 )
 from app.notifier import send_telegram_message, format_telegram_message
 from app.utils import is_duplicate, get_cache_size, clear_cache
+from app.smc_ai import process_with_ai
 
 # Configure logging
 logging.basicConfig(
@@ -182,6 +183,50 @@ async def tradingview_webhook(request: Request):
             }
         )
     
+    # AI VALIDATION with GROK + DEEPSEEK
+    signal_data = {
+        "symbol": symbol,
+        "direction": direction,
+        "price_ctx": {
+            "entry": entry,
+            "sl": sl,
+            "tp": tp
+        },
+        "confluence_score": confluence_score,
+        "flags": {
+            "poi_valid": poi_valid,
+            "fvg_open": fvg_open,
+            "ob_valid": ob_valid,
+            "bos_confirm": bos_confirm,
+            "choch_confirm": choch_confirm,
+            "liq_swept": liq_swept,
+            "imbalance_filled": imbalance_filled,
+            "trend_aligned": trend_aligned,
+            "volume_confirm": volume_confirm,
+            "time_filter": time_filter
+        }
+    }
+    
+    ai_trade = process_with_ai(signal_data)
+    if ai_trade:
+        logger.info(f"[{request_id}] AI APPROVED: {ai_trade}")
+        # Use AI-calculated SL/TP if available
+        if ai_trade.get("sl"):
+            sl = ai_trade["sl"]
+        if ai_trade.get("tp"):
+            tp = ai_trade["tp"]
+    else:
+        logger.info(f"[{request_id}] AI REJECTED signal")
+        return JSONResponse(
+            status_code=202,
+            content={
+                "ok": True,
+                "sent": False,
+                "reason": "ai_rejected",
+                "event_id": event_id
+            }
+        )
+    
     # Calculate Risk:Reward ratio
     rr_ratio = calculate_rr_ratio(entry, sl, tp)
     
@@ -257,10 +302,11 @@ async def tradingview_webhook(request: Request):
         return JSONResponse(
             status_code=200,
             content={
+                "status": "AI APPROVED",
                 "ok": True,
                 "sent": True,
                 "event_id": event_id,
-                "trade": {
+                "trade": ai_trade if ai_trade else {
                     "entry": entry,
                     "sl": sl,
                     "tp": tp,
